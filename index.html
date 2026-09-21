@@ -435,7 +435,7 @@ async function entrar() {
 }
 let canal = null;
 function abrirApp() {
-  fecharEntrada(); render(); status('ok'); avisoDoDia();
+  fecharEntrada(); render(); status('ok'); avisoDoDia(); agendarRefresh();
   if (!canal && sb) canal = sb.channel('registros-salao').on('postgres_changes', { event: '*', schema: 'public', table: 'registros' }, aplicarRemoto)
     .subscribe(st => { if (st === 'SUBSCRIBED') sync(); });
 }
@@ -1165,6 +1165,34 @@ $('#sair').onclick = async () => {
   db = null; snap = {}; if (canal) { sb.removeChannel(canal); canal = null; }
   telaLogin('Você saiu.');
 };
+// Auto-refresh pra pegar solicitações do site
+let tAutoRefresh;
+function agendarRefresh() {
+  clearTimeout(tAutoRefresh);
+  tAutoRefresh = setTimeout(async () => {
+    if (!sb || !db) return;
+    try {
+      const { data } = await sb.from('registros').select('tipo,id,dados')
+        .eq('tipo','ags').order('id');
+      if (data) {
+        const novas = data.map(r=>r.dados);
+        const antes = db.ags.filter(a=>a.status==='pendente').length;
+        db.ags = novas;
+        const depois = db.ags.filter(a=>a.status==='pendente').length;
+        if (depois > antes) {
+          toast(`📋 ${depois - antes} nova solicitação pelo site!`);
+          render();
+        } else {
+          // Atualiza badge sem rerender completo
+          const pendentes = db.ags.filter(a=>a.status==='pendente');
+          const bp = $('#badgePend'); if(bp){bp.hidden=!pendentes.length;bp.textContent=pendentes.length;}
+        }
+      }
+    } catch(e){}
+    agendarRefresh();
+  }, 30000); // 30 segundos
+}
+
 let tRes; window.addEventListener('resize', () => { clearTimeout(tRes); tRes = setTimeout(() => { if (db && !$('#app').hidden && tela === 'agenda') render(); }, 200); });
 iniciar();
 </script>
