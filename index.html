@@ -224,7 +224,7 @@ nav .sair{margin-top:8px;font-size:12.5px;color:#a8997f;border:1px solid #4a3c28
 <div class="app" id="app" hidden>
   <nav>
     <div class="marca" id="nomeSalao"></div>
-    <button data-tela="agenda" class="on">Agenda</button>
+    <button data-tela="agenda" class="on">Agenda <span class="badge" id="badgePend" hidden></span></button>
     <button data-tela="caixa">Caixa do dia</button>
     <button data-tela="clientes">Clientes <span class="badge" id="badgeCli" hidden></span></button>
     <button data-tela="comissoes">Comissões</button>
@@ -671,6 +671,8 @@ function render() {
   $('#nomeSalao').innerHTML = `<img src="${LOGO}" alt="${esc(db.config.nome)} ${esc(db.config.slogan || '')}">`;
   document.title = `${db.config.nome} | Agenda`;
   const nL = lembretes().filter(l => l.hoje || (l.k && !l.k.avisado)).length, bd = $('#badgeCli');
+  const pendentes = db.ags.filter(a => a.status === 'pendente'); const bp = $('#badgePend');
+  if (bp) { bp.hidden = !pendentes.length; bp.textContent = pendentes.length; }
   bd.hidden = !nL; bd.textContent = nL;
   ({ agenda: telaAgenda, caixa: telaCaixa, clientes: telaClientes, comissoes: telaComissoes, cadastros: telaCadastros, backup: telaBackup })[tela]();
 }
@@ -711,6 +713,40 @@ function conflito(a) {
     ini < toMin(o.hora) + (+o.dur) && toMin(o.hora) < fim);
 }
 
+/* ===== Solicitações pendentes do site ===== */
+function painelPendentes() {
+  const pends = db.ags.filter(a => a.status === 'pendente').sort((a,b)=>a.data.localeCompare(b.data)||a.hora.localeCompare(b.hora));
+  if (!pends.length) return '';
+  const dataBR = s => s.split('-').reverse().join('/');
+  return `<div class="lembretes" style="border-color:#8A66C2;margin-bottom:16px">
+    <h3 style="color:#8A66C2">📋 Solicitações pelo site (${pends.length})</h3>
+    ${pends.map(a => {
+      const c=cli(a.cli), sv=serv(a.serv), p=prof(a.prof);
+      const z=c?.tel?'https://wa.me/55'+c.tel.replace(/\D/g,'')+'?text='+encodeURIComponent(`Olá ${c?.nome?.split(' ')[0]}! ✨ Confirmamos seu horário para ${sv?.nome} no dia ${dataBR(a.data)} às ${a.hora}. Te esperamos na Guria Dourada!`):'';
+      return `<div class="lem">
+        <span><b>${dataBR(a.data)} às ${a.hora}</b> · ${esc(c?.nome||'Cliente')} · ${esc(sv?.nome||'')} ${p?'· '+esc(p.nome):''}</span>
+        <span class="acts">
+          <button class="btn peq ok" data-apr="${a.id}">Confirmar</button>
+          ${z?`<a class="btn peq zap" href="${z}" target="_blank" rel="noopener">WhatsApp</a>`:''}
+          <button class="btn peq perigo" data-rec="${a.id}">Recusar</button>
+        </span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function ligarPendentes(raiz) {
+  raiz.querySelectorAll('[data-apr]').forEach(b => b.onclick = () => {
+    const a=db.ags.find(x=>x.id===b.dataset.apr); if(!a) return;
+    const c=conflito({...a,status:'agendado'});
+    if(c){ toast(`Conflito com ${cli(c.cli)?.nome} às ${c.hora}. Recuse ou mude o horário.`); return; }
+    a.status='agendado'; salvar(); render(); toast('Horário confirmado!');
+  });
+  raiz.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => {
+    if(!confirm('Recusar esta solicitação?')) return;
+    const a=db.ags.find(x=>x.id===b.dataset.rec); if(a){ a.status='recusado'; salvar(); render(); toast('Solicitação recusada.'); }
+  });
+}
+
 let profCel = null;
 const ehCelular = () => window.innerWidth <= 800;
 function telaAgenda() {
@@ -743,11 +779,13 @@ function telaAgenda() {
   const livres = ags.length;
   main.innerHTML = `<h1>Agenda</h1><p class="sub">${nomeDia.charAt(0).toUpperCase() + nomeDia.slice(1)}. ${livres} atendimento${livres === 1 ? '' : 's'} marcado${livres === 1 ? '' : 's'}. ${ehCelular() ? 'Toque' : 'Clique'} num horário vazio para agendar.</p>
   ${db.exemplo ? `<div class="aviso">Você está vendo dados de exemplo. Teste à vontade: clique num atendimento e feche a comanda para ver a comissão cair no relatório. Quando for usar de verdade, vá em Backup e apague o exemplo.</div>` : ''}
+  ${painelPendentes()}
   ${diaAgenda === hoje() ? painelLembretes(lembretes(), 4) : ''}
   <div class="barra"><button class="btn" id="ant" aria-label="Dia anterior">‹</button><button class="btn" id="hj">Hoje</button><button class="btn" id="prx" aria-label="Próximo dia">›</button>
   <input type="date" id="dia" value="${diaAgenda}"><button class="btn pri" id="novoAg">Novo agendamento</button></div>
   ${chips}<div class="rolagem">${profs.length ? g : '<div class="painel vazio">Cadastre a equipe em Cadastros para montar a agenda.</div>'}</div>`;
   ligarLembretes(main);
+  ligarPendentes(main);
   main.querySelectorAll('[data-chip]').forEach(b => b.onclick = () => { profCel = b.dataset.chip; render(); });
   $('#ant').onclick = () => { diaAgenda = addDias(diaAgenda, -1); render(); };
   $('#prx').onclick = () => { diaAgenda = addDias(diaAgenda, 1); render(); };
