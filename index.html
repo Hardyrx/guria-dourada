@@ -693,6 +693,7 @@ function formulario(titulo, campos, valores, aoSalvar, extra) {
     const v = valores[c.k] ?? '';
     const cls = c.cheio ? 'cheio' : '';
     if (c.tipo === 'check') return `<label class="check ${cls}"><input type="checkbox" name="${c.k}" ${v ? 'checked' : ''}> ${esc(c.rot)}</label>`;
+    if (c.oculto) return `<label class="${cls}" data-oculto="${c.k}" style="display:none">${esc(c.rot)}<input name="${c.k}" type="${c.tipo || 'text'}" value="${esc(v)}" ${c.ph ? `placeholder="${esc(c.ph)}"` : ''}></label>`;
     if (c.tipo === 'select') return `<label class="${cls}">${esc(c.rot)}<select name="${c.k}">${c.ops.map(([ov, ol]) => `<option value="${esc(ov)}" ${String(ov) === String(v) ? 'selected' : ''}>${esc(ol)}</option>`).join('')}</select></label>`;
     return `<label class="${cls}">${esc(c.rot)}<input name="${c.k}" type="${c.tipo || 'text'}" value="${esc(v)}" ${c.step ? `step="${c.step}"` : ''} ${c.ph ? `placeholder="${esc(c.ph)}"` : ''}></label>`;
   }).join('')}</div><div class="erro"></div>
@@ -700,6 +701,10 @@ function formulario(titulo, campos, valores, aoSalvar, extra) {
   <button class="btn" data-fechar>Cancelar</button><button class="btn pri" data-salvar>Salvar</button></div>`;
   const f = modal(html);
   const ler = () => { const o = {}; campos.forEach(c => { const el = f.querySelector(`[name="${c.k}"]`); o[c.k] = c.tipo === 'check' ? el.checked : (c.tipo === 'number' ? (el.value === '' ? '' : +el.value) : el.value.trim()); }); return o; };
+  // Mostrar campos nova cliente só quando necessário
+  const cliSel = f.querySelector('[name=cli]');
+  const toggleNova = () => { const nova = cliSel?.value === '__nova'; f.querySelectorAll('[data-oculto]').forEach(el => el.style.display = nova ? '' : 'none'); };
+  if (cliSel) { cliSel.addEventListener('change', toggleNova); toggleNova(); }
   f.querySelector('[data-fechar]').onclick = () => f.remove();
   f.querySelector('[data-salvar]').onclick = () => { const r = aoSalvar(ler(), f); if (typeof r === 'string') f.querySelector('.erro').textContent = r; else f.remove(); };
   if (extra) f.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { extra[+b.dataset.x].fn(f); });
@@ -811,9 +816,9 @@ function formAgendamento(a) {
     { k: 'prof', rot: 'Profissional', tipo: 'select', ops: profsAtivos().map(p => [p.id, `${p.nome} (cadeira ${p.cadeira})`]) },
     { k: 'serv', rot: 'Serviço', tipo: 'select', ops: db.servicos.map(s => [s.id, `${s.nome} · ${s.dur} min`]) },
     { k: 'cli', rot: 'Cliente', tipo: 'select', ops: [['', 'Selecione...'], ['__nova', '+ Cliente nova'], ...clis.map(c => [c.id, c.nome])] },
-    { k: 'nova', rot: 'Nome da cliente nova', ph: 'Só se escolheu cliente nova' },
-    { k: 'tel', rot: 'Telefone da cliente nova', ph: '(51) 9...' },
-    { k: 'niver', rot: 'Aniversário da cliente nova', tipo: 'date' },
+    { k: 'nova', rot: 'Nome da cliente nova', ph: 'Só se escolheu cliente nova', oculto: true },
+    { k: 'tel', rot: 'Telefone da cliente nova', ph: '(51) 9...', oculto: true },
+    { k: 'niver', rot: 'Aniversário da cliente nova', tipo: 'date', oculto: true },
     { k: 'obs', rot: 'Observação', cheio: true }
   ], a, v => {
     if (!v.data || !v.hora) return 'Informe data e horário.';
