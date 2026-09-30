@@ -520,10 +520,10 @@ function gerarCupons() {
 
 function mensagem(c, k) {
   const n = primeiroNome(c.nome), sal = db.config.nome, ate = k ? dataBR(k.validoAte) : '';
-  if (!k) return `Oi ${n}! Aqui é da ${sal}. Feliz aniversário! Que seu dia seja lindo.`;
-  if (k.tipo === 'niver') return `Oi ${n}! Aqui é da ${sal}. Feliz aniversário! 🎉 Pra comemorar, você ganhou ${k.pct}% de desconto em qualquer serviço até ${ate}. É só informar o código ${k.codigo} quando vier. Beijos!`;
-  if (k.tipo === 'fidel') return `Oi ${n}! Você já é de casa aqui na ${sal} e a gente quer agradecer: ${k.pct}% de desconto no seu próximo atendimento, válido até ${ate}. Código ${k.codigo}.`;
-  return `Oi ${n}, que saudade! Faz um tempinho que você não vem na ${sal}. Separamos ${k.pct}% de desconto pra você voltar, válido até ${ate}. Código ${k.codigo}. Bora agendar?`;
+  if (!k) return `Oi ${n}! Aqui e da ${sal}. Feliz aniversario! Que seu dia seja lindo.`;
+  if (k.tipo === 'niver') return `Oi ${n}! Aqui e da ${sal}. Feliz aniversario! Para comemorar, voce ganhou ${k.pct}% de desconto em qualquer servico ate ${ate}. E so informar o codigo ${k.codigo} quando vier. Beijos!`;
+  if (k.tipo === 'fidel') return `Oi ${n}! Voce ja e de casa aqui na ${sal} e a gente quer agradecer: ${k.pct}% de desconto no seu proximo atendimento, valido ate ${ate}. Codigo ${k.codigo}.`;
+  return `Oi ${n}, que saudade! Faz um tempinho que voce nao vem na ${sal}. Separamos ${k.pct}% de desconto pra voce voltar, valido ate ${ate}. Codigo ${k.codigo}. Bora agendar?`;
 }
 function linkZap(c, k) {
   let tel = (c.tel || '').replace(/\D/g, '');
@@ -842,9 +842,9 @@ function zapAg(c, a, tipo) {
   const sv=serv(a.serv), p=prof(a.prof), dataBR=a.data.split('-').reverse().join('/');
   const n=c.nome.split(' ')[0];
   let msg='';
-  if (tipo==='confirm') msg=`Olá ${n}! ✨ Seu horário está confirmado na Guria Dourada Beauty Clinic.\n\n📅 ${dataBR} às ${a.hora}\n💇 ${sv?.nome||''}\n👩 ${p?.nome||''}\n\nTe esperamos! Qualquer dúvida é só chamar. 💛`;
-  if (tipo==='cancel') msg=`Olá ${n}, tudo bem? Precisamos avisar que seu horário do dia ${dataBR} às ${a.hora} na Guria Dourada foi cancelado.\n\nPara reagendar é só nos chamar aqui. 💛`;
-  if (tipo==='new') msg=`Olá ${n}! ✨ Seu horário foi agendado na Guria Dourada Beauty Clinic.\n\n📅 ${dataBR} às ${a.hora}\n💇 ${sv?.nome||''}\n👩 ${p?.nome||''}\n\nTe esperamos! 💛`;
+  if (tipo==='confirm') msg=`Ola ${n}! Seu horario esta confirmado na Guria Dourada Beauty Clinic.\n\nData: ${dataBR} as ${a.hora}\nServico: ${sv?.nome||''}\nProfissional: ${p?.nome||''}\n\nTe esperamos! Qualquer duvida e so chamar.`;
+  if (tipo==='cancel') msg=`Ola ${n}, tudo bem? Precisamos avisar que seu horario do dia ${dataBR} as ${a.hora} na Guria Dourada foi cancelado.\n\nPara reagendar e so nos chamar aqui.`;
+  if (tipo==='new') msg=`Ola ${n}! Seu horario foi agendado na Guria Dourada Beauty Clinic.\n\nData: ${dataBR} as ${a.hora}\nServico: ${sv?.nome||''}\nProfissional: ${p?.nome||''}\n\nTe esperamos!`;
   return 'https://wa.me/55'+c.tel.replace(/\D/g,'')+`?text=${encodeURIComponent(msg)}`;
 }
 
