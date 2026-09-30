@@ -6,7 +6,17 @@
 <title>Agendar | Guria Dourada Beauty Clinic</title>
 <meta name="theme-color" content="#2A2118">
 <meta name="description" content="Solicite seu horário na Guria Dourada Beauty Clinic. Atendimento exclusivo e humanizado.">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.116.0/umd/supabase.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+// fallback se cdnjs falhar
+window.addEventListener('error', function(e) {
+  if (e.filename && e.filename.includes('cdnjs')) {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    document.head.appendChild(s);
+  }
+}, true);
+</script>
 <style>
 :root{
   --bg:#F4EEE4; --card:#FFFCF7; --ink:#2A2118; --muted:#8A7B66; --line:#E8DECF; --line-ouro:#DCC79E;
@@ -219,9 +229,9 @@ async function iniciar() {
   sb = window.supabase.createClient(URL_SB, KEY_SB);
   carregarLogo();
   try {
-    log('Buscando dados...');
+
     const rows = await baixarTudo();
-    log('Processando ' + rows.length + ' registros...');
+
     const db = {};
     rows.forEach(r => {
       if (r.tipo==='config') { cfg = r.dados; return; }
@@ -231,7 +241,7 @@ async function iniciar() {
     profs = (db.profs||[]).filter(p=>p.ativo).sort((a,b)=>a.cadeira-b.cadeira);
     servicos = (db.servicos||[]).sort((a,b)=>a.nome.localeCompare(b.nome));
     ags = db.ags||[];
-    log('Serviços: ' + servicos.length + ' | Profs: ' + profs.length);
+
     if (!servicos.length) { app.innerHTML='<div class="card"><p style="text-align:center;padding:20px">O salão ainda está configurando os serviços ('+rows.length+' registros encontrados, 0 serviços). Volte em breve!</p></div>'; return; }
     renderStep();
   } catch(e) {
@@ -505,7 +515,7 @@ async function enviar() {
     }
     const servsList = sel.servs || [sel.serv];
     let horaAtual = sel.hora;
-    const rows = servsList.map(sv => {
+    const agRows = servsList.map(sv => {
       const agId = uid();
       const ag = { id:agId, data:sel.data, hora:horaAtual, prof:profId, cli:cliId, serv:sv.id, dur:sv.dur, status:'pendente', obs:`Solicitado pelo site por ${form.nome} (${form.tel})` };
       // próximo serviço começa após este
@@ -514,8 +524,8 @@ async function enviar() {
       horaAtual = `${String(Math.floor(proxMin/60)).padStart(2,'0')}:${String(proxMin%60).padStart(2,'0')}`;
       return {tipo:'ags',id:agId,dados:ag,atualizado:new Date().toISOString()};
     });
-    await sb.from('registros').upsert(rows,{onConflict:'tipo,id'});
-    const agId = rows[0].id; // pra exibir o código
+    await sb.from('registros').upsert(agRows,{onConflict:'tipo,id'});
+    const agId = agRows[0].id;
     // Tela de sucesso
     const dataBR = sel.data.split('-').reverse().join('/');
     const cod = 'GD-'+agId.toUpperCase().slice(0,6);
