@@ -6,17 +6,7 @@
 <title>Agendar | Guria Dourada Beauty Clinic</title>
 <meta name="theme-color" content="#2A2118">
 <meta name="description" content="Solicite seu horário na Guria Dourada Beauty Clinic. Atendimento exclusivo e humanizado.">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.116.0/umd/supabase.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script>
-// fallback se cdnjs falhar
-window.addEventListener('error', function(e) {
-  if (e.filename && e.filename.includes('cdnjs')) {
-    var s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-    document.head.appendChild(s);
-  }
-}, true);
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
 <style>
 :root{
   --bg:#F4EEE4; --card:#FFFCF7; --ink:#2A2118; --muted:#8A7B66; --line:#E8DECF; --line-ouro:#DCC79E;
