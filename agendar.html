@@ -51,13 +51,17 @@ header img{width:200px;max-width:70%;height:auto;display:block;margin:0 auto 16p
 .card p{color:var(--muted);font-size:14px;margin-bottom:16px;line-height:1.6}
 
 /* Serviços */
-.servicos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.servico{border:1.5px solid var(--line);border-radius:4px;padding:14px;cursor:pointer;transition:border-color .2s,background .2s;text-align:left}
-.servico:hover{border-color:var(--ouro)}
-.servico.on{border-color:var(--ouro-claro);background:#F7EEDC}
-.servico b{display:block;font-size:15px;margin-bottom:4px}
+.servicos{display:flex;flex-direction:column;gap:0}
+.servico{border-bottom:1px solid var(--line);padding:14px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background .15s;background:transparent}
+.servico:first-child{border-top:1px solid var(--line)}
+.servico:hover{background:#F7EEDC}
+.servico.on{background:#F7EEDC;border-left:3px solid var(--ouro-claro)}
+.servico .info{flex:1;min-width:0}
+.servico b{display:block;font-size:15px;margin-bottom:2px}
 .servico span{font-size:13px;color:var(--muted)}
-.servico .preco{color:var(--ouro-claro);font-weight:600;font-size:14px;margin-top:4px;display:block}
+.servico .preco{color:var(--ouro-claro);font-weight:600;font-size:14px;display:inline;margin-left:8px}
+.servico .seta{color:var(--line-ouro);font-size:18px;flex-shrink:0}
+.servico.on .seta{color:var(--ouro-claro)}
 
 /* Profissionais */
 .profs{display:flex;flex-wrap:wrap;gap:10px}
@@ -266,9 +270,8 @@ function renderServico() {
     <h2>Qual serviço você deseja?</h2>
     <div class="servicos">${servicos.map(s=>`
       <div class="servico ${sel.serv?.id===s.id?'on':''}" data-id="${s.id}">
-        <b>${esc(s.nome)}</b>
-        <span>${s.dur} min</span>
-        <span class="preco">${brl(s.preco)}</span>
+        <div class="info"><b>${esc(s.nome)}</b><span>${s.dur} min<span class="preco">${brl(s.preco)}</span></span></div>
+        <span class="seta">${sel.serv?.id===s.id?'✓':'›'}</span>
       </div>`).join('')}</div>
     <div class="erro" id="err"></div>
   </div>
