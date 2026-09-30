@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agendar | Guria Dourada Beauty Clinic</title>
+<meta name="theme-color" content="#2A2118">
+<meta name="description" content="Solicite seu horário na Guria Dourada Beauty Clinic. Atendimento exclusivo e humanizado.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#F4EEE4; --card:#FFFCF7; --ink:#2A2118; --muted:#8A7B66; --line:#E8DECF; --line-ouro:#DCC79E;
+  --ouro:#B8913F; --ouro-claro:#8C6A22; --nav:#2A2118; --nav-ouro:#E0C27A;
+  --alerta:#B3261E; --verde:#3F8C6C;
+  --serif:"Didot","Bodoni 72","Playfair Display",Georgia,serif;
+  --sans:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5;
+  background-image:radial-gradient(900px 500px at 50% -5%,#ead9b544,transparent 60%);min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+
+/* Header */
+header{background:var(--nav);padding:28px 20px 24px;text-align:center;
+  background-image:radial-gradient(800px 400px at 50% -10%,#e0c27a1a,transparent 60%)}
+header img{width:200px;max-width:70%;height:auto;display:block;margin:0 auto 16px}
+.lacre{font-size:11px;letter-spacing:4px;color:#a8997f;border-top:1px solid #4a3c28;
+  border-bottom:1px solid #4a3c28;padding:7px 20px;display:inline-block;margin-top:4px}
+
+/* Container */
+.wrap{max-width:560px;margin:0 auto;padding:32px 20px 60px}
+
+/* Steps */
+.steps{display:flex;justify-content:center;gap:0;margin-bottom:32px}
+.step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;top:16px;left:calc(50% + 16px);
+  right:calc(-50% + 16px);height:1px;background:var(--line-ouro)}
+.step .num{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line-ouro);
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);background:var(--bg);z-index:1}
+.step.on .num{background:var(--ouro-claro);border-color:var(--ouro-claro);color:#fff;font-weight:600}
+.step.done .num{background:var(--verde);border-color:var(--verde);color:#fff}
+.step.done .num::after{content:'✓'}
+.step .rot{font-size:11px;color:var(--muted);letter-spacing:.3px}
+.step.on .rot{color:var(--ouro-claro);font-weight:600}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:24px;margin-bottom:16px;
+  box-shadow:0 1px 2px #2a211808,0 8px 24px #8c6a220a}
+.card h2{font-family:var(--serif);font-weight:400;font-size:22px;margin-bottom:16px;color:var(--ink)}
+.card p{color:var(--muted);font-size:14px;margin-bottom:16px;line-height:1.6}
+
+/* Serviços */
+.servicos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.servico{border:1.5px solid var(--line);border-radius:4px;padding:14px;cursor:pointer;transition:border-color .2s,background .2s;text-align:left}
+.servico:hover{border-color:var(--ouro)}
+.servico.on{border-color:var(--ouro-claro);background:#F7EEDC}
+.servico b{display:block;font-size:15px;margin-bottom:4px}
+.servico span{font-size:13px;color:var(--muted)}
+.servico .preco{color:var(--ouro-claro);font-weight:600;font-size:14px;margin-top:4px;display:block}
+
+/* Profissionais */
+.profs{display:flex;flex-wrap:wrap;gap:10px}
+.pchip{border:1.5px solid var(--line);border-radius:30px;padding:10px 18px;cursor:pointer;
+  display:flex;align-items:center;gap:8px;font-size:14px;transition:border-color .2s,background .2s}
+.pchip:hover{border-color:var(--ouro)}
+.pchip.on{border-color:var(--ouro-claro);background:#F7EEDC;font-weight:600}
+.bola{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+/* Calendário */
+.dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+.dias .cab{text-align:center;font-size:11px;color:var(--muted);padding:4px 0;letter-spacing:.5px}
+.dia{text-align:center;padding:8px 4px;border-radius:4px;cursor:pointer;font-size:14px;border:1.5px solid transparent;transition:all .2s}
+.dia:hover:not(.off){border-color:var(--ouro);background:#F7EEDC}
+.dia.on{background:var(--ouro-claro);color:#fff;border-color:var(--ouro-claro);font-weight:600}
+.dia.off{color:#ccc;cursor:default}
+.dia.hoje-mark{font-weight:700;color:var(--ouro-claro)}
+.mes-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.mes-nav button{background:none;border:1px solid var(--line-ouro);border-radius:4px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+.mes-nav button:hover{border-color:var(--ouro);background:#F7EEDC}
+.mes-nav span{font-family:var(--serif);font-size:18px;font-weight:400}
+
+/* Horários */
+.horarios{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.h{border:1.5px solid var(--line);border-radius:4px;padding:10px 4px;text-align:center;
+  cursor:pointer;font-size:14px;transition:all .2s}
+.h:hover{border-color:var(--ouro);background:#F7EEDC}
+.h.on{background:var(--ouro-claro);color:#fff;border-color:var(--ouro-claro);font-weight:600}
+.h.ocupado{color:#ccc;cursor:default;border-color:var(--line);background:#fafafa;text-decoration:line-through}
+.sem-horario{color:var(--muted);font-size:14px;text-align:center;padding:20px;font-style:italic}
+
+/* Campos */
+.campo{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.campo label{font-size:12.5px;color:var(--muted);letter-spacing:.3px}
+.campo input,.campo textarea{border:1px solid var(--line);border-radius:4px;padding:10px 12px;
+  background:#fff;font-size:15px}
+.campo input:focus,.campo textarea:focus{outline:1.5px solid var(--ouro);outline-offset:1px}
+.campo input::placeholder,.campo textarea::placeholder{color:#c0b49e}
+
+/* Botões */
+.btn{border:1px solid var(--line-ouro);background:transparent;padding:12px 20px;border-radius:4px;
+  cursor:pointer;color:var(--ink);font-size:15px;letter-spacing:.3px;transition:all .2s;width:100%}
+.btn:hover{border-color:var(--ouro);background:#F7EEDC}
+.btn.pri{background:linear-gradient(180deg,#C9A24A,#A07A2E);border-color:#A07A2E;color:#fff;font-weight:600}
+.btn.pri:hover{background:linear-gradient(180deg,#D4AE56,#AD8636)}
+.btn.pri:disabled{opacity:.5;cursor:not-allowed}
+.nav-btns{display:flex;gap:10px;margin-top:20px}
+.nav-btns .btn{flex:1}
+
+/* Resumo */
+.resumo-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.resumo-item:last-child{border:0}
+.resumo-item span:first-child{color:var(--muted)}
+.resumo-item span:last-child{font-weight:500;text-align:right}
+.destaque{background:#F7EEDC;border-radius:4px;padding:14px;margin-top:14px;font-size:14px;color:var(--ouro-claro);line-height:1.6}
+
+/* Sucesso */
+.sucesso{text-align:center;padding:30px 20px}
+.sucesso .icone{font-size:56px;margin-bottom:16px}
+.sucesso h2{font-family:var(--serif);font-size:28px;font-weight:400;margin-bottom:12px}
+.sucesso p{color:var(--muted);line-height:1.7;margin-bottom:20px}
+.sucesso .cod{font-size:28px;font-family:var(--serif);color:var(--ouro-claro);letter-spacing:4px;
+  border:1px solid var(--line-ouro);border-radius:4px;padding:12px 20px;display:inline-block;margin:10px 0}
+
+/* Erro */
+.erro{color:var(--alerta);font-size:14px;min-height:1em;margin-top:8px}
+.aviso{background:#F7EEDC;border:1px solid var(--line-ouro);border-radius:4px;padding:12px 14px;font-size:14px;color:var(--ouro-claro);margin-bottom:14px}
+
+/* Loading */
+.loading{text-align:center;padding:30px;color:var(--muted);font-size:14px}
+.spin{display:inline-block;width:24px;height:24px;border:2px solid var(--line-ouro);border-top-color:var(--ouro);
+  border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px;display:block;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{text-align:center;padding:20px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+footer a{color:var(--ouro-claro);text-decoration:none}
+
+@media(max-width:480px){
+  .servicos{grid-template-columns:1fr}
+  .horarios{grid-template-columns:repeat(3,1fr)}
+  header img{width:160px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <img id="logoH" alt="Guria Dourada Beauty Clinic">
+  <div class="lacre">AGENDAMENTO EXCLUSIVO</div>
+</header>
+
+<div class="wrap" id="app">
+  <div class="loading"><div class="spin"></div>Carregando...</div>
+</div>
+
+<footer>
+  <p>Guria Dourada Beauty Clinic &nbsp;·&nbsp; <a href="#">Private Suite</a></p>
+  <p style="margin-top:4px">Após o envio, nossa equipe confirma pelo WhatsApp em breve.</p>
+</footer>
+
+<script>
+const URL_SB = 'https://tfoazcjbnubedrwndqtc.supabase.co';
+const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmb2F6Y2pibnViZWRyd25kcXRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjA4MjMsImV4cCI6MjEwNTU5NjgyM30.B_00xsYqcW5r27Uo5ZpUec3Mb6ZVCnNztvsGOBLzW20';
+
+const pad = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const hoje = () => iso(new Date());
+const addDias = (s,n) => { const d=new Date(s+'T12:00'); d.setDate(d.getDate()+n); return iso(d); };
+const toMin = h => { const [a,b]=h.split(':').map(Number); return a*60+b; };
+const toHM = m => `${pad(Math.floor(m/60))}:${pad(m%60)}`;
+const brl = v => (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2,9);
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS_S = ['D','S','T','Q','Q','S','S'];
+
+const app = document.getElementById('app');
+let sb, cfg={}, profs=[], servicos=[], ags=[];
+let sel = { serv:null, prof:null, data:null, hora:null };
+let form = { nome:'', tel:'', niver:'' };
+let step = 1, mesAtual = new Date();
+
+/* Carregar logo embutida no index.html via Supabase */
+async function carregarLogo() {
+  try {
+    const { data } = await sb.from('registros').select('dados').eq('tipo','meta').eq('id','meta').single();
+    // Logo não está no banco, buscamos via config
+  } catch(e){}
+  // Tenta buscar do index principal via fetch
+  try {
+    const r = await fetch('./');
+    const t = await r.text();
+    const m = t.match(/const LOGO = '(data:image\/png;base64,[^']+)'/);
+    if (m) document.getElementById('logoH').src = m[1];
+  } catch(e){}
+}
+
+async function iniciar() {
+  sb = window.supabase.createClient(URL_SB, KEY_SB);
+  await carregarLogo();
+  try {
+    const rows = await baixarTudo();
+    const db = {};
+    rows.forEach(r => {
+      if (r.tipo==='config') { cfg = r.dados; return; }
+      if (!db[r.tipo]) db[r.tipo]=[];
+      db[r.tipo].push(r.dados);
+    });
+    profs = (db.profs||[]).filter(p=>p.ativo).sort((a,b)=>a.cadeira-b.cadeira);
+    servicos = (db.servicos||[]).sort((a,b)=>a.nome.localeCompare(b.nome));
+    ags = db.ags||[];
+    if (!servicos.length) { app.innerHTML='<div class="card"><p style="text-align:center;padding:20px">O salão ainda está configurando os serviços. Volte em breve!</p></div>'; return; }
+    renderStep();
+  } catch(e) {
+    app.innerHTML='<div class="card"><p style="text-align:center;padding:20px;color:var(--alerta)">Não conseguimos conectar. Verifique a internet e recarregue a página.</p></div>';
+  }
+}
+
+async function baixarTudo() {
+  const rows=[];
+  for (let de=0;;de+=1000) {
+    const {data,error}=await sb.from('registros').select('tipo,id,dados').order('tipo').order('id').range(de,de+999);
+    if(error) throw error;
+    rows.push(...data);
+    if(data.length<1000) break;
+  }
+  return rows;
+}
+
+function horariosLivres(data, profId, servDur) {
+  if (!cfg.abre||!cfg.fecha) return [];
+  const ini=toMin(cfg.abre), fim=toMin(cfg.fecha), passo=+(cfg.intervalo||30), dur=+servDur||30;
+  const slots=[];
+  for (let m=ini; m+dur<=fim; m+=passo) slots.push(toHM(m));
+  const ocupados = ags.filter(a=>a.data===data && a.prof===profId && a.status!=='cancelado' && a.status!=='recusado');
+  return slots.filter(h => {
+    const hMin=toMin(h);
+    return !ocupados.some(a => hMin < toMin(a.hora)+(+a.dur) && toMin(a.hora) < hMin+dur);
+  });
+}
+
+function profDisponivelNoDia(data, servDur) {
+  return profs.filter(p => horariosLivres(data, p.id, servDur).length > 0);
+}
+
+/* ===== Render Steps ===== */
+function renderSteps() {
+  const nomes = ['Serviço','Profissional','Data e Hora','Seus dados','Confirmar'];
+  return `<div class="steps">${nomes.map((n,i)=>{
+    const s=i+1, cls=s===step?'on':s<step?'done':'';
+    return `<div class="step ${cls}"><div class="num">${s<step?'':s}</div><div class="rot">${n}</div></div>`;
+  }).join('')}</div>`;
+}
+
+function renderStep() {
+  if (step===1) renderServico();
+  else if (step===2) renderProf();
+  else if (step===3) renderData();
+  else if (step===4) renderDados();
+  else if (step===5) renderConfirmar();
+}
+
+/* Step 1: Serviço */
+function renderServico() {
+  app.innerHTML = renderSteps() + `<div class="card">
+    <h2>Qual serviço você deseja?</h2>
+    <div class="servicos">${servicos.map(s=>`
+      <div class="servico ${sel.serv?.id===s.id?'on':''}" data-id="${s.id}">
+        <b>${esc(s.nome)}</b>
+        <span>${s.dur} min</span>
+        <span class="preco">${brl(s.preco)}</span>
+      </div>`).join('')}</div>
+    <div class="erro" id="err"></div>
+  </div>
+  <div class="nav-btns"><button class="btn pri" id="prox">Próximo</button></div>`;
+  app.querySelectorAll('.servico').forEach(el => el.onclick = () => {
+    sel.serv = servicos.find(s=>s.id===el.dataset.id);
+    sel.prof = null; sel.data = null; sel.hora = null;
+    app.querySelectorAll('.servico').forEach(e=>e.classList.toggle('on',e.dataset.id===el.dataset.id));
+  });
+  app.querySelector('#prox').onclick = () => {
+    if (!sel.serv) { app.querySelector('#err').textContent='Escolha um serviço para continuar.'; return; }
+    step=2; renderStep();
+  };
+}
+
+/* Step 2: Profissional */
+function renderProf() {
+  app.innerHTML = renderSteps() + `<div class="card">
+    <h2>Com quem você prefere?</h2>
+    <p>Escolha uma profissional ou deixe em aberto para qualquer uma disponível.</p>
+    <div class="profs">
+      <div class="pchip ${!sel.prof?'on':''}" data-id=""><span>✨</span> Qualquer disponível</div>
+      ${profs.map(p=>`<div class="pchip ${sel.prof?.id===p.id?'on':''}" data-id="${p.id}">
+        <span class="bola" style="background:${p.cor}"></span>${esc(p.nome)}</div>`).join('')}
+    </div>
+    <div class="erro" id="err"></div>
+  </div>
+  <div class="nav-btns">
+    <button class="btn" id="vol">Voltar</button>
+    <button class="btn pri" id="prox">Próximo</button>
+  </div>`;
+  app.querySelectorAll('.pchip').forEach(el => el.onclick = () => {
+    sel.prof = el.dataset.id ? profs.find(p=>p.id===el.dataset.id) : null;
+    sel.data=null; sel.hora=null;
+    app.querySelectorAll('.pchip').forEach(e=>e.classList.toggle('on',e.dataset.id===el.dataset.id));
+  });
+  app.querySelector('#vol').onclick = () => { step=1; renderStep(); };
+  app.querySelector('#prox').onclick = () => { step=3; renderStep(); };
+}
+
+/* Step 3: Data e hora */
+function renderData() {
+  const dur = sel.serv?.dur||60;
+  const anoMes = mesAtual;
+  const primeiroDia = new Date(anoMes.getFullYear(), anoMes.getMonth(), 1);
+  const ultimoDia = new Date(anoMes.getFullYear(), anoMes.getMonth()+1, 0);
+  const offset = primeiroDia.getDay();
+  const hj = hoje();
+  const maxData = addDias(hj, 60);
+  let diasHtml = DIAS_S.map(d=>`<div class="cab">${d}</div>`).join('');
+  for (let i=0;i<offset;i++) diasHtml += `<div></div>`;
+  for (let d=1;d<=ultimoDia.getDate();d++) {
+    const data = `${anoMes.getFullYear()}-${pad(anoMes.getMonth()+1)}-${pad(d)}`;
+    const passado = data < hj, futuroLonge = data > maxData;
+    const profs_disp = sel.prof ? horariosLivres(data, sel.prof.id, dur).length > 0 : profDisponivelNoDia(data, dur).length > 0;
+    const off = passado || futuroLonge || !profs_disp;
+    const cls = [off?'off':'', data===sel.data?'on':'', data===hj&&!off?'hoje-mark':''].filter(Boolean).join(' ');
+    diasHtml += `<div class="dia ${cls}" data-dt="${data}">${d}</div>`;
+  }
+  let horariosHtml = '';
+  if (sel.data) {
+    const profIds = sel.prof ? [sel.prof.id] : profs.map(p=>p.id);
+    const todos = {};
+    profIds.forEach(pid => horariosLivres(sel.data, pid, dur).forEach(h => todos[h] = (todos[h]||[]).concat(pid)));
+    const slots = Object.keys(todos).sort();
+    if (!slots.length) horariosHtml = `<div class="sem-horario">Nenhum horário disponível neste dia.</div>`;
+    else horariosHtml = `<div class="horarios">${slots.map(h=>`<div class="h ${h===sel.hora?'on':''}" data-h="${h}">${h}</div>`).join('')}</div>`;
+  }
+  app.innerHTML = renderSteps() + `<div class="card">
+    <h2>Escolha o dia</h2>
+    <div class="mes-nav">
+      <button id="mesAnt">‹</button>
+      <span>${MESES[anoMes.getMonth()]} ${anoMes.getFullYear()}</span>
+      <button id="mesProx">›</button>
+    </div>
+    <div class="dias">${diasHtml}</div>
+    ${sel.data ? `<h2 style="margin-top:16px;margin-bottom:12px">Horários disponíveis</h2>${horariosHtml}` : ''}
+    <div class="erro" id="err"></div>
+  </div>
+  <div class="nav-btns">
+    <button class="btn" id="vol">Voltar</button>
+    <button class="btn pri" id="prox">Próximo</button>
+  </div>`;
+  app.querySelectorAll('.dia:not(.off)').forEach(el => el.onclick = () => {
+    sel.data=el.dataset.dt; sel.hora=null; renderData();
+  });
+  app.querySelectorAll('.h').forEach(el => el.onclick = () => {
+    sel.hora=el.dataset.h;
+    app.querySelectorAll('.h').forEach(e=>e.classList.toggle('on',e.dataset.h===el.dataset.h));
+  });
+  app.querySelector('#mesAnt').onclick = () => { mesAtual=new Date(anoMes.getFullYear(),anoMes.getMonth()-1,1); renderData(); };
+  app.querySelector('#mesProx').onclick = () => { mesAtual=new Date(anoMes.getFullYear(),anoMes.getMonth()+1,1); renderData(); };
+  app.querySelector('#vol').onclick = () => { step=2; renderStep(); };
+  app.querySelector('#prox').onclick = () => {
+    if (!sel.data) { app.querySelector('#err').textContent='Escolha um dia.'; return; }
+    if (!sel.hora) { app.querySelector('#err').textContent='Escolha um horário.'; return; }
+    step=4; renderStep();
+  };
+}
+
+/* Step 4: Dados */
+function renderDados() {
+  app.innerHTML = renderSteps() + `<div class="card">
+    <h2>Seus dados</h2>
+    <p>Para confirmarmos pelo WhatsApp.</p>
+    <div class="campo"><label>NOME COMPLETO *</label><input id="fNome" value="${esc(form.nome)}" placeholder="Maria da Silva" autocomplete="name"></div>
+    <div class="campo"><label>WHATSAPP *</label><input id="fTel" value="${esc(form.tel)}" placeholder="(51) 99999-9999" type="tel" autocomplete="tel"></div>
+    <div class="campo"><label>DATA DE ANIVERSÁRIO (opcional)</label><input id="fNiver" value="${esc(form.niver)}" type="date"></div>
+    <div class="aviso">Após o envio, nossa equipe confirma o horário pelo WhatsApp em breve. ✨</div>
+    <div class="erro" id="err"></div>
+  </div>
+  <div class="nav-btns">
+    <button class="btn" id="vol">Voltar</button>
+    <button class="btn pri" id="prox">Próximo</button>
+  </div>`;
+  app.querySelector('#vol').onclick = () => { step=3; renderStep(); };
+  app.querySelector('#prox').onclick = () => {
+    const nome=app.querySelector('#fNome').value.trim(), tel=app.querySelector('#fTel').value.trim(), niver=app.querySelector('#fNiver').value;
+    if (!nome) { app.querySelector('#err').textContent='Digite seu nome.'; return; }
+    if (!tel||tel.replace(/\D/g,'').length<10) { app.querySelector('#err').textContent='Digite um WhatsApp válido.'; return; }
+    form={nome,tel,niver}; step=5; renderStep();
+  };
+}
+
+/* Step 5: Confirmar */
+function renderConfirmar() {
+  const profNome = sel.prof ? sel.prof.nome : 'Qualquer disponível';
+  const dataBR = sel.data.split('-').reverse().join('/');
+  const diasS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const diaSem = diasS[new Date(sel.data+'T12:00').getDay()];
+  app.innerHTML = renderSteps() + `<div class="card">
+    <h2>Confirme sua solicitação</h2>
+    <div class="resumo-item"><span>Serviço</span><span>${esc(sel.serv.nome)}</span></div>
+    <div class="resumo-item"><span>Duração</span><span>${sel.serv.dur} min</span></div>
+    <div class="resumo-item"><span>Valor</span><span>${brl(sel.serv.preco)}</span></div>
+    <div class="resumo-item"><span>Profissional</span><span>${esc(profNome)}</span></div>
+    <div class="resumo-item"><span>Data</span><span>${diaSem}, ${dataBR}</span></div>
+    <div class="resumo-item"><span>Horário</span><span>${sel.hora}</span></div>
+    <div class="resumo-item"><span>Nome</span><span>${esc(form.nome)}</span></div>
+    <div class="resumo-item"><span>WhatsApp</span><span>${esc(form.tel)}</span></div>
+    <div class="destaque">Após o envio, sua solicitação chega para nossa equipe e confirmamos pelo WhatsApp em breve. O horário só fica reservado após a confirmação.</div>
+    <div class="erro" id="err"></div>
+  </div>
+  <div class="nav-btns">
+    <button class="btn" id="vol">Voltar</button>
+    <button class="btn pri" id="env">Enviar solicitação</button>
+  </div>`;
+  app.querySelector('#vol').onclick = () => { step=4; renderStep(); };
+  app.querySelector('#env').onclick = () => enviar();
+}
+
+async function enviar() {
+  const btn = app.querySelector('#env');
+  btn.disabled=true; btn.textContent='Enviando...';
+  try {
+    // Escolhe profissional se foi "qualquer uma"
+    let profId = sel.prof?.id;
+    if (!profId) {
+      const disp = profs.filter(p => horariosLivres(sel.data, p.id, sel.serv.dur).includes(sel.hora));
+      if (!disp.length) { app.querySelector('#err').textContent='Esse horário acabou de ser preenchido. Escolha outro.'; btn.disabled=false; btn.textContent='Enviar solicitação'; return; }
+      profId = disp[Math.floor(Math.random()*disp.length)].id;
+    }
+    // Verifica se cliente já existe
+    const { data: rows } = await sb.from('registros').select('dados').eq('tipo','clientes').contains('dados', {tel: form.tel.replace(/\D/g,'')});
+    let cliId;
+    if (rows && rows.length) {
+      cliId = rows[0].dados.id;
+    } else {
+      cliId = uid();
+      const novoCli = { id:cliId, nome:form.nome, tel:form.tel, niver:form.niver||'', obs:'' };
+      await sb.from('registros').upsert([{tipo:'clientes',id:cliId,dados:novoCli,atualizado:new Date().toISOString()}],{onConflict:'tipo,id'});
+    }
+    const agId = uid();
+    const ag = { id:agId, data:sel.data, hora:sel.hora, prof:profId, cli:cliId, serv:sel.serv.id, dur:sel.serv.dur, status:'pendente', obs:`Solicitado pelo site por ${form.nome} (${form.tel})` };
+    await sb.from('registros').upsert([{tipo:'ags',id:agId,dados:ag,atualizado:new Date().toISOString()}],{onConflict:'tipo,id'});
+    // Tela de sucesso
+    const dataBR = sel.data.split('-').reverse().join('/');
+    const cod = 'GD-'+agId.toUpperCase().slice(0,6);
+    app.innerHTML = `<div class="card sucesso">
+      <div class="icone">✨</div>
+      <h2>Solicitação enviada!</h2>
+      <p>Recebemos seu pedido para <b>${esc(sel.serv.nome)}</b> no dia <b>${dataBR} às ${sel.hora}</b>.<br><br>
+      Nossa equipe vai confirmar pelo WhatsApp <b>${esc(form.tel)}</b> em breve. O horário só fica reservado após a confirmação.</p>
+      <div class="cod">${cod}</div>
+      <p style="font-size:13px;margin-top:8px">Guarde este código caso precise entrar em contato.</p>
+      <button class="btn pri" style="margin-top:24px" onclick="location.reload()">Fazer nova solicitação</button>
+    </div>`;
+  } catch(e) {
+    console.error(e);
+    app.querySelector('#err').textContent='Erro ao enviar. Verifique a internet e tente de novo.';
+    btn.disabled=false; btn.textContent='Enviar solicitação';
+  }
+}
+
+iniciar();
+</script>
+</body>
+</html>
