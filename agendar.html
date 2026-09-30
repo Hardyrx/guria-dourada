@@ -51,17 +51,33 @@ header img{width:200px;max-width:70%;height:auto;display:block;margin:0 auto 16p
 .card p{color:var(--muted);font-size:14px;margin-bottom:16px;line-height:1.6}
 
 /* Serviços */
-.servicos{display:flex;flex-direction:column;gap:0}
-.servico{border-bottom:1px solid var(--line);padding:14px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background .15s;background:transparent}
-.servico:first-child{border-top:1px solid var(--line)}
+.cats{display:flex;flex-direction:column;gap:0}
+.cat-grupo{}
+.cat-cab{border-bottom:1px solid var(--line);padding:14px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600;font-size:15px;transition:background .15s}
+.cat-cab:first-of-type,.cat-grupo:first-child .cat-cab{border-top:1px solid var(--line)}
+.cat-cab:hover{background:#F7EEDC}
+.cat-cab .seta{color:var(--line-ouro);font-size:18px;transition:transform .2s}
+.cat-cab.aberto .seta{transform:rotate(90deg);color:var(--ouro-claro)}
+.cat-cab .badge-cat{background:var(--ouro-claro);color:#fff;border-radius:10px;font-size:11px;padding:1px 7px;margin-left:6px;font-weight:700}
+.cat-lista{display:none;flex-direction:column;gap:0;border-bottom:1px solid var(--line-ouro);background:#FDFAF4}
+.cat-lista.aberto{display:flex}
+.servico{border-bottom:1px solid var(--line);padding:12px 16px 12px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background .15s}
+.servico:last-child{border-bottom:0}
 .servico:hover{background:#F7EEDC}
-.servico.on{background:#F7EEDC;border-left:3px solid var(--ouro-claro)}
+.servico.on{background:#F7EEDC}
 .servico .info{flex:1;min-width:0}
-.servico b{display:block;font-size:15px;margin-bottom:2px}
+.servico b{display:block;font-size:14px;margin-bottom:2px;font-weight:500}
 .servico span{font-size:13px;color:var(--muted)}
-.servico .preco{color:var(--ouro-claro);font-weight:600;font-size:14px;display:inline;margin-left:8px}
-.servico .seta{color:var(--line-ouro);font-size:18px;flex-shrink:0}
-.servico.on .seta{color:var(--ouro-claro)}
+.servico .preco{color:var(--ouro-claro);font-weight:600;font-size:13px;display:inline;margin-left:6px}
+.servico .check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-ouro);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:transparent}
+.servico.on .check{background:var(--ouro-claro);border-color:var(--ouro-claro);color:#fff}
+/* Carrinho */
+.carrinho{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line-ouro);padding:14px 16px;margin:0 -24px -24px;display:none}
+.carrinho.visivel{display:block}
+.carr-itens{font-size:13px;color:var(--muted);margin-bottom:10px;max-height:80px;overflow-y:auto}
+.carr-item{display:flex;justify-content:space-between;padding:2px 0}
+.carr-total{display:flex;justify-content:space-between;font-weight:600;font-size:15px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.carr-total span:last-child{color:var(--ouro-claro)}
 
 /* Profissionais */
 .profs{display:flex;flex-wrap:wrap;gap:10px}
@@ -175,6 +191,18 @@ const toHM = m => `${pad(Math.floor(m/60))}:${pad(m%60)}`;
 const brl = v => (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Math.random().toString(36).slice(2,9);
+function categorizarServico(nome) {
+  const n = nome.toLowerCase();
+  if (n.includes('escova')) return 'Escovas';
+  if (n.includes('progressiv') || n.includes('alisament') || n.includes('chapinha') || n.includes('relaxament')) return 'Progressivas e Alisamentos';
+  if (n.includes('hidrat') || n.includes('nutri') || n.includes('repara') || n.includes('reconstruc') || n.includes('restaur')) return 'Hidratação e Tratamentos';
+  if (n.includes('mega hair') || n.includes('manutenc') || n.includes('extensao') || n.includes('extensão')) return 'Mega Hair';
+  if (n.includes('colorac') || n.includes('coloraç') || n.includes('tint') || n.includes('mechas') || n.includes('luzes') || n.includes('balayage')) return 'Coloração';
+  if (n.includes('corte')) return 'Cortes';
+  if (n.includes('manicure') || n.includes('pedicure') || n.includes('unhas') || n.includes('gel') || n.includes('fibra')) return 'Unhas';
+  if (n.includes('sobrancelha') || n.includes('cílios') || n.includes('cilios') || n.includes('design')) return 'Sobrancelha e Cílios';
+  return 'Outros Serviços';
+}
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DIAS_S = ['D','S','T','Q','Q','S','S'];
 
@@ -265,24 +293,63 @@ function renderStep() {
 }
 
 /* Step 1: Serviço */
+let carrinho = []; // array de serviços selecionados
 function renderServico() {
-  app.innerHTML = renderSteps() + `<div class="card">
-    <h2>Qual serviço você deseja?</h2>
-    <div class="servicos">${servicos.map(s=>`
-      <div class="servico ${sel.serv?.id===s.id?'on':''}" data-id="${s.id}">
-        <div class="info"><b>${esc(s.nome)}</b><span>${s.dur} min<span class="preco">${brl(s.preco)}</span></span></div>
-        <span class="seta">${sel.serv?.id===s.id?'✓':'›'}</span>
-      </div>`).join('')}</div>
-    <div class="erro" id="err"></div>
+  // Agrupar por categoria
+  const grupos = {};
+  servicos.forEach(sv => {
+    const cat = categorizarServico(sv.nome);
+    if (!grupos[cat]) grupos[cat] = [];
+    grupos[cat].push(sv);
+  });
+  const ordem = ['Escovas','Progressivas e Alisamentos','Hidratação e Tratamentos','Mega Hair','Coloração','Cortes','Unhas','Sobrancelha e Cílios','Outros Serviços'];
+  const cats = ordem.filter(c => grupos[c]).concat(Object.keys(grupos).filter(c=>!ordem.includes(c)));
+  const totalCarr = carrinho.reduce((t,sv)=>t+sv.preco,0);
+  const htmlGrupos = cats.map(cat => {
+    const svs = grupos[cat];
+    const selNoCat = svs.filter(sv=>carrinho.find(c=>c.id===sv.id)).length;
+    const aberto = svs.some(sv=>carrinho.find(c=>c.id===sv.id)) ? 'aberto' : '';
+    return `<div class="cat-grupo">
+      <div class="cat-cab ${aberto}" data-cat="${esc(cat)}">
+        <span>${esc(cat)}${selNoCat?`<span class="badge-cat">${selNoCat}</span>`:''}</span>
+        <span class="seta">›</span>
+      </div>
+      <div class="cat-lista ${aberto}">${svs.map(sv=>{
+        const on=carrinho.find(c=>c.id===sv.id)?'on':'';
+        return `<div class="servico ${on}" data-id="${sv.id}">
+          <div class="info"><b>${esc(sv.nome)}</b><span>${sv.dur} min<span class="preco">${brl(sv.preco)}</span></span></div>
+          <div class="check">${on?'✓':''}</div></div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+  app.innerHTML = renderSteps() + `<div class="card" style="padding-bottom:0">
+    <h2>Quais serviços você deseja?</h2>
+    <p style="margin-bottom:12px">Selecione um ou mais serviços.</p>
+    <div class="cats">${htmlGrupos}</div>
+    <div class="carrinho ${carrinho.length?'visivel':''}">
+      <div class="carr-itens">${carrinho.map(sv=>`<div class="carr-item"><span>${esc(sv.nome)}</span><span>${brl(sv.preco)}</span></div>`).join('')}</div>
+      <div class="carr-total"><span>${carrinho.length} serviço${carrinho.length>1?'s':''}</span><span>${brl(totalCarr)}</span></div>
+    </div>
+    <div class="erro" id="err" style="padding:0 0 12px"></div>
   </div>
   <div class="nav-btns"><button class="btn pri" id="prox">Próximo</button></div>`;
+  // Accordion
+  app.querySelectorAll('.cat-cab').forEach(cab => cab.onclick = () => {
+    cab.classList.toggle('aberto');
+    cab.nextElementSibling.classList.toggle('aberto');
+  });
+  // Seleção
   app.querySelectorAll('.servico').forEach(el => el.onclick = () => {
-    sel.serv = servicos.find(s=>s.id===el.dataset.id);
-    sel.prof = null; sel.data = null; sel.hora = null;
-    app.querySelectorAll('.servico').forEach(e=>e.classList.toggle('on',e.dataset.id===el.dataset.id));
+    const sv = servicos.find(s=>s.id===el.dataset.id);
+    const idx = carrinho.findIndex(c=>c.id===sv.id);
+    if (idx>=0) carrinho.splice(idx,1); else carrinho.push(sv);
+    sel.prof=null; sel.data=null; sel.hora=null;
+    renderServico();
   });
   app.querySelector('#prox').onclick = () => {
-    if (!sel.serv) { app.querySelector('#err').textContent='Escolha um serviço para continuar.'; return; }
+    if (!carrinho.length) { app.querySelector('#err').textContent='Escolha pelo menos um serviço.'; return; }
+    sel.servs = carrinho; // array de serviços
+    sel.serv = carrinho[0]; // compatibilidade
     step=2; renderStep();
   };
 }
@@ -314,7 +381,8 @@ function renderProf() {
 
 /* Step 3: Data e hora */
 function renderData() {
-  const dur = sel.serv?.dur||60;
+  const totalDur = (sel.servs||[sel.serv]).reduce((t,sv)=>t+(+sv.dur||60),0);
+  const dur = totalDur;
   const anoMes = mesAtual;
   const primeiroDia = new Date(anoMes.getFullYear(), anoMes.getMonth(), 1);
   const ultimoDia = new Date(anoMes.getFullYear(), anoMes.getMonth()+1, 0);
@@ -404,9 +472,9 @@ function renderConfirmar() {
   const diaSem = diasS[new Date(sel.data+'T12:00').getDay()];
   app.innerHTML = renderSteps() + `<div class="card">
     <h2>Confirme sua solicitação</h2>
-    <div class="resumo-item"><span>Serviço</span><span>${esc(sel.serv.nome)}</span></div>
-    <div class="resumo-item"><span>Duração</span><span>${sel.serv.dur} min</span></div>
-    <div class="resumo-item"><span>Valor</span><span>${brl(sel.serv.preco)}</span></div>
+    <div class="resumo-item"><span>Serviços</span><span style="text-align:right">${(sel.servs||[sel.serv]).map(sv=>esc(sv.nome)).join('<br>')}</span></div>
+    <div class="resumo-item"><span>Duração total</span><span>${(sel.servs||[sel.serv]).reduce((t,sv)=>t+(+sv.dur||0),0)} min</span></div>
+    <div class="resumo-item"><span>Total</span><span>${brl((sel.servs||[sel.serv]).reduce((t,sv)=>t+sv.preco,0))}</span></div>
     <div class="resumo-item"><span>Profissional</span><span>${esc(profNome)}</span></div>
     <div class="resumo-item"><span>Data</span><span>${diaSem}, ${dataBR}</span></div>
     <div class="resumo-item"><span>Horário</span><span>${sel.hora}</span></div>
@@ -444,9 +512,19 @@ async function enviar() {
       const novoCli = { id:cliId, nome:form.nome, tel:form.tel, niver:form.niver||'', obs:'' };
       await sb.from('registros').upsert([{tipo:'clientes',id:cliId,dados:novoCli,atualizado:new Date().toISOString()}],{onConflict:'tipo,id'});
     }
-    const agId = uid();
-    const ag = { id:agId, data:sel.data, hora:sel.hora, prof:profId, cli:cliId, serv:sel.serv.id, dur:sel.serv.dur, status:'pendente', obs:`Solicitado pelo site por ${form.nome} (${form.tel})` };
-    await sb.from('registros').upsert([{tipo:'ags',id:agId,dados:ag,atualizado:new Date().toISOString()}],{onConflict:'tipo,id'});
+    const servsList = sel.servs || [sel.serv];
+    let horaAtual = sel.hora;
+    const rows = servsList.map(sv => {
+      const agId = uid();
+      const ag = { id:agId, data:sel.data, hora:horaAtual, prof:profId, cli:cliId, serv:sv.id, dur:sv.dur, status:'pendente', obs:`Solicitado pelo site por ${form.nome} (${form.tel})` };
+      // próximo serviço começa após este
+      const [h,m] = horaAtual.split(':').map(Number);
+      const proxMin = h*60+m+(+sv.dur||60);
+      horaAtual = `${String(Math.floor(proxMin/60)).padStart(2,'0')}:${String(proxMin%60).padStart(2,'0')}`;
+      return {tipo:'ags',id:agId,dados:ag,atualizado:new Date().toISOString()};
+    });
+    await sb.from('registros').upsert(rows,{onConflict:'tipo,id'});
+    const agId = rows[0].id; // pra exibir o código
     // Tela de sucesso
     const dataBR = sel.data.split('-').reverse().join('/');
     const cod = 'GD-'+agId.toUpperCase().slice(0,6);
