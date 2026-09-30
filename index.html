@@ -740,6 +740,13 @@ function ligarPendentes(raiz) {
     const c=conflito({...a,status:'agendado'});
     if(c){ toast(`Conflito com ${cli(c.cli)?.nome} às ${c.hora}. Recuse ou mude o horário.`); return; }
     a.status='agendado'; salvar(); render(); toast('Horário confirmado!');
+    // Abre WhatsApp automaticamente após confirmar
+    const cc=cli(a.cli), sv=serv(a.serv);
+    if(cc?.tel) {
+      const dataBR=a.data.split('-').reverse().join('/');
+      const msg=`Olá ${cc.nome.split(' ')[0]}! ✨ Seu horário foi confirmado na Guria Dourada Beauty Clinic. Te esperamos no dia ${dataBR} às ${a.hora} para ${sv?.nome}. Qualquer dúvida é só chamar!`;
+      window.open('https://wa.me/55'+cc.tel.replace(/\D/g,'')+`?text=${encodeURIComponent(msg)}`,'_blank');
+    }
   });
   raiz.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => {
     if(!confirm('Recusar esta solicitação?')) return;
@@ -1092,14 +1099,14 @@ function editarCad(id) {
     formulario(id ? 'Editar serviço' : 'Novo serviço', [
       { k: 'nome', rot: 'Nome', cheio: true }, { k: 'preco', rot: 'Preço (R$)', tipo: 'number', step: '0.01' }, { k: 'dur', rot: 'Duração (min)', tipo: 'number' },
       { k: 'com', rot: 'Comissão específica (%). Deixe vazio para usar o padrão de cada profissional', tipo: 'number', step: '0.5', cheio: true }
-    ], s, v => { if (!v.nome || v.preco === '') return 'Preencha nome e preço.'; if (!v.dur) return 'Informe a duração.'; gravar('servicos', v); }, excluir('servicos', 'este serviço'));
+    ], s, v => { if (!v.nome || v.preco === '') return 'Preencha nome e preço.'; if (!v.dur) return 'Informe a duração.'; if (v.com === 0 || v.com === '') v.com = ''; else v.com = +v.com; gravar('servicos', v); }, excluir('servicos', 'este serviço'));
   }
   if (abaCad === 'produtos') {
     const p = id ? prod(id) : { nome: '', preco: '', com: '' };
     formulario(id ? 'Editar produto' : 'Novo produto', [
       { k: 'nome', rot: 'Nome', cheio: true }, { k: 'preco', rot: 'Preço (R$)', tipo: 'number', step: '0.01' },
       { k: 'com', rot: 'Comissão específica (%)', tipo: 'number', step: '0.5', ph: 'Vazio = padrão' }
-    ], p, v => { if (!v.nome || v.preco === '') return 'Preencha nome e preço.'; gravar('produtos', v); }, excluir('produtos', 'este produto'));
+    ], p, v => { if (!v.nome || v.preco === '') return 'Preencha nome e preço.'; if (v.com === 0 || v.com === '') v.com = ''; else v.com = +v.com; gravar('produtos', v); }, excluir('produtos', 'este produto'));
   }
 }
 function editarSalao() {
