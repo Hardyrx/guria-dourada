@@ -120,7 +120,8 @@ details table{margin-top:10px}
 .modal p{color:#5A4D3C}
 .campos{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .campos label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);letter-spacing:.3px}
-.campos label.cheio{grid-column:1/-1}
+.campos label.cheio{grid-column:1/-1;min-width:0}
+.campos label.cheio input,.campos label.cheio select,.campos label.cheio textarea{width:100%;min-width:0;max-width:100%}
 .campos label.check{flex-direction:row;align-items:center;gap:10px;color:var(--ink)}
 .acoes{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
 .acoes .esq{margin-right:auto}
@@ -196,8 +197,11 @@ nav .sair{margin-top:8px;font-size:12.5px;color:#a8997f;border:1px solid #4a3c28
   .barra .btn,.barra input{padding:10px 12px}
   .lem{flex-direction:column;align-items:flex-start}
   td,th{padding:10px 8px}
-  .modal{padding:22px 18px}
-  .fundo{padding:20px 10px}
+  .modal{padding:16px 14px;margin:0}
+  .fundo{padding:10px 6px;align-items:flex-start}
+  .modal h2{font-size:22px;margin-bottom:12px}
+  .campos{grid-template-columns:1fr}
+  select,input{font-size:16px}
 
   .app{grid-template-columns:1fr}
   nav{flex-direction:row;flex-wrap:wrap;padding:14px;height:auto;position:static;border-right:0}
