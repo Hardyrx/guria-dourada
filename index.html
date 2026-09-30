@@ -827,7 +827,20 @@ function formAgendamento(a) {
     if (c) return `${prof(novo.prof).nome} já tem ${cli(c.cli)?.nome || 'cliente'} às ${c.hora} nesse período. Escolha outro horário ou profissional.`;
     if (edit) Object.assign(db.ags.find(x => x.id === a.id), novo); else db.ags.push(novo);
     salvar(); diaAgenda = v.data; render(); toast(edit ? 'Agendamento atualizado' : 'Agendamento criado');
+    const cc = cli(cid), agSalvo = db.ags.find(x=>x.id===novo.id);
+    if (!edit && cc?.tel && agSalvo) { const zl=zapAg(cc,agSalvo,'new'); if(zl) window.open(zl,'_blank'); }
   });
+}
+
+function zapAg(c, a, tipo) {
+  if (!c?.tel) return '';
+  const sv=serv(a.serv), p=prof(a.prof), dataBR=a.data.split('-').reverse().join('/');
+  const n=c.nome.split(' ')[0];
+  let msg='';
+  if (tipo==='confirm') msg=`Olá ${n}! ✨ Seu horário está confirmado na Guria Dourada Beauty Clinic.\n\n📅 ${dataBR} às ${a.hora}\n💇 ${sv?.nome||''}\n👩 ${p?.nome||''}\n\nTe esperamos! Qualquer dúvida é só chamar. 💛`;
+  if (tipo==='cancel') msg=`Olá ${n}, tudo bem? Precisamos avisar que seu horário do dia ${dataBR} às ${a.hora} na Guria Dourada foi cancelado.\n\nPara reagendar é só nos chamar aqui. 💛`;
+  if (tipo==='new') msg=`Olá ${n}! ✨ Seu horário foi agendado na Guria Dourada Beauty Clinic.\n\n📅 ${dataBR} às ${a.hora}\n💇 ${sv?.nome||''}\n👩 ${p?.nome||''}\n\nTe esperamos! 💛`;
+  return 'https://wa.me/55'+c.tel.replace(/\D/g,'')+`?text=${encodeURIComponent(msg)}`;
 }
 
 function abrirAg(a) {
@@ -837,10 +850,12 @@ function abrirAg(a) {
     ${c && cuponsAtivos(c.id).length ? `<p class="aviso">🎟️ Tem cupom disponível: ${cuponsAtivos(c.id).map(k => `${k.pct}% ${TIPOS[k.tipo].toLowerCase()} (${k.codigo})`).join(', ')}. Aplique ao fechar a comanda.</p>` : ''}
     ${a.status === 'fechado' ? '<p class="aviso">Comanda já fechada. Para corrigir, exclua a venda no Caixa do dia.</p>' : ''}
     <div class="acoes"><button class="btn perigo esq" data-canc>Cancelar horário</button>
+    ${c?.tel ? `<a class="btn zap" href="${zapAg(c,a,'confirm')}" target="_blank" rel="noopener">WhatsApp confirmação</a>` : ''}
     ${a.status !== 'fechado' ? '<button class="btn" data-edit>Editar</button><button class="btn ok" data-fechar-cmd>Fechar comanda</button>' : ''}
     <button class="btn" data-sair>Voltar</button></div>`);
   f.querySelector('[data-sair]').onclick = () => f.remove();
-  f.querySelector('[data-canc]').onclick = () => { if (confirm('Cancelar este horário?')) { const a2 = db.ags.find(x => x.id === a.id); if (a2) a2.status = 'cancelado'; salvar(); f.remove(); render(); toast('Horário cancelado'); } };
+  f.querySelector('[data-canc]').onclick = () => { if (confirm('Cancelar este horário?')) { const a2 = db.ags.find(x => x.id === a.id); if (a2) a2.status = 'cancelado'; salvar(); f.remove(); render(); toast('Horário cancelado');
+    const zl = zapAg(c, a, 'cancel'); if (zl) window.open(zl, '_blank'); } };
   const e = f.querySelector('[data-edit]'); if (e) e.onclick = () => { f.remove(); formAgendamento(a); };
   const fc = f.querySelector('[data-fechar-cmd]'); if (fc) fc.onclick = () => { f.remove(); comanda(a); };
 }
