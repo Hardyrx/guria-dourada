@@ -219,7 +219,9 @@ async function iniciar() {
   sb = window.supabase.createClient(URL_SB, KEY_SB);
   carregarLogo();
   try {
+    log('Buscando dados...');
     const rows = await baixarTudo();
+    log('Processando ' + rows.length + ' registros...');
     const db = {};
     rows.forEach(r => {
       if (r.tipo==='config') { cfg = r.dados; return; }
@@ -229,7 +231,8 @@ async function iniciar() {
     profs = (db.profs||[]).filter(p=>p.ativo).sort((a,b)=>a.cadeira-b.cadeira);
     servicos = (db.servicos||[]).sort((a,b)=>a.nome.localeCompare(b.nome));
     ags = db.ags||[];
-    if (!servicos.length) { app.innerHTML='<div class="card"><p style="text-align:center;padding:20px">O salão ainda está configurando os serviços. Volte em breve!</p></div>'; return; }
+    log('Serviços: ' + servicos.length + ' | Profs: ' + profs.length);
+    if (!servicos.length) { app.innerHTML='<div class="card"><p style="text-align:center;padding:20px">O salão ainda está configurando os serviços ('+rows.length+' registros encontrados, 0 serviços). Volte em breve!</p></div>'; return; }
     renderStep();
   } catch(e) {
     app.innerHTML='<div class="card"><p style="text-align:center;padding:20px;color:var(--alerta)">Não conseguimos conectar. Verifique a internet e recarregue a página.</p></div>';
