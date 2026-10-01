@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/adm", "destination": "/index.html" },
-    { "source": "/", "destination": "/agendar.html" }
+    { "source": "/adm", "destination": "/adm.html" }
   ]
 }
