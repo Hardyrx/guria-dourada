@@ -1,9 +1,6 @@
 {
   "rewrites": [
     { "source": "/adm", "destination": "/index.html" },
-    { "source": "/agendar", "destination": "/agendar.html" }
-  ],
-  "redirects": [
-    { "source": "/", "destination": "/agendar.html", "permanent": false }
+    { "source": "/", "destination": "/agendar.html" }
   ]
 }
