@@ -765,12 +765,29 @@ function painelPendentes() {
     }).join('')}
   </div>`;
 }
+/* Confirma/recusa pelo banco, com a mesma trava da área da equipe. Antes da Etapa 3 a função
+   não existe, e o painel cai no jeito antigo (grava aqui e sincroniza). */
+async function responderPeloBanco(a, acao) {
+  const { error } = await sb.rpc('responder_pedido', { p_id: a.id, p_acao: acao });
+  if (error) {
+    if (error.code === 'PGRST202' || /Could not find the function/i.test(error.message)) return 'local';
+    toast(error.message || 'Não foi possível salvar. Confira a internet.'); return 'erro';
+  }
+  const { data } = await sb.from('registros').select('tipo,id,dados').eq('tipo', 'ags').eq('id', a.id).maybeSingle();
+  if (data) aplicarRemoto({ eventType: 'UPDATE', new: data });
+  else a.status = acao === 'confirmar' ? 'agendado' : 'recusado';
+  return 'banco';
+}
 function ligarPendentes(raiz) {
-  raiz.querySelectorAll('[data-apr]').forEach(b => b.onclick = () => {
+  raiz.querySelectorAll('[data-apr]').forEach(b => b.onclick = async () => {
     const a=db.ags.find(x=>x.id===b.dataset.apr); if(!a) return;
     const c=conflito({...a,status:'agendado'});
     if(c){ toast(`Conflito com ${cli(c.cli)?.nome} às ${c.hora}. Recuse ou mude o horário.`); return; }
-    a.status='agendado'; salvar(); render(); toast('Horário confirmado!');
+    b.disabled = true;
+    const r = await responderPeloBanco(a, 'confirmar');
+    if (r === 'erro') { b.disabled = false; return; }
+    if (r === 'local') { a.status='agendado'; salvar(); }
+    render(); toast('Horário confirmado!');
     // Abre WhatsApp automaticamente após confirmar
     const cc=cli(a.cli), sv=serv(a.serv);
     if(cc?.tel) {
@@ -779,9 +796,13 @@ function ligarPendentes(raiz) {
       window.open('https://wa.me/55'+cc.tel.replace(/\D/g,'')+`?text=${encodeURIComponent(msg)}`,'_blank');
     }
   });
-  raiz.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => {
+  raiz.querySelectorAll('[data-rec]').forEach(b => b.onclick = async () => {
     if(!confirm('Recusar esta solicitação?')) return;
-    const a=db.ags.find(x=>x.id===b.dataset.rec); if(a){ a.status='recusado'; salvar(); render(); toast('Solicitação recusada.'); }
+    const a=db.ags.find(x=>x.id===b.dataset.rec); if(!a) return;
+    const r = await responderPeloBanco(a, 'recusar');
+    if (r === 'erro') return;
+    if (r === 'local') { a.status='recusado'; salvar(); }
+    render(); toast('Solicitação recusada.');
   });
 }
 
@@ -817,6 +838,7 @@ function telaAgenda() {
   const livres = ags.length;
   main.innerHTML = `<h1>Agenda</h1><p class="sub">${nomeDia.charAt(0).toUpperCase() + nomeDia.slice(1)}. ${livres} atendimento${livres === 1 ? '' : 's'} marcado${livres === 1 ? '' : 's'}. ${ehCelular() ? 'Toque' : 'Clique'} num horário vazio para agendar.</p>
   ${db.exemplo ? `<div class="aviso">Você está vendo dados de exemplo. Teste à vontade: clique num atendimento e feche a comanda para ver a comissão cair no relatório. Quando for usar de verdade, vá em Backup e apague o exemplo.</div>` : ''}
+  ${(db.config.fechado || []).includes(new Date(diaAgenda + 'T12:00').getDay()) ? '<div class="aviso">O salão está marcado como fechado neste dia. O site não aceita pedidos para ele.</div>' : ''}
   ${painelPendentes()}
   ${diaAgenda === hoje() ? painelLembretes(lembretes(), 4) : ''}
   <div class="barra"><button class="btn" id="ant" aria-label="Dia anterior">‹</button><button class="btn" id="hj">Hoje</button><button class="btn" id="prx" aria-label="Próximo dia">›</button>
@@ -1116,6 +1138,7 @@ function telaCadastros() {
   if (abaCad === 'salao') { const c = db.config; corpo = `<div class="painel"><p>Nome: <b>${esc(c.nome)}</b> (${esc(c.slogan)}) · Funcionamento: ${c.abre} às ${c.fecha} · Intervalo da agenda: ${c.intervalo} min</p>
     <p>Taxas: ${Object.entries(PAGS).map(([k, l]) => `${l} ${c.taxas[k]}%`).join(' · ')}</p>
     <p>Taxa do cartão ${c.descontaTaxa ? '<b>é descontada</b>' : '<b>não é descontada</b>'} antes de calcular a comissão.</p>
+    <p>Dias fechados no site: <b>${(c.fechado || []).length ? c.fechado.map(i => DIAS_SEMANA[i]).join(', ') : 'nenhum'}</b></p>
     <button class="btn pri" id="edSalao">Editar</button></div>`; }
   main.innerHTML = `<h1>Cadastros</h1><p class="sub">Equipe, serviços, produtos e regras de comissão.</p>
   <div class="abas">${Object.entries(abas).map(([k, l]) => `<button data-aba="${k}" class="${k === abaCad ? 'on' : ''}">${l}</button>`).join('')}</div>${corpo}`;
@@ -1270,6 +1293,7 @@ function editarCad(id) {
     ], p, v => { if (!v.nome || v.preco === '') return 'Preencha nome e preço.'; if (v.com === 0 || v.com === '') v.com = ''; else v.com = +v.com; gravar('produtos', v); }, excluir('produtos', 'este produto'));
   }
 }
+const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 function editarSalao() {
   const c = db.config;
   formulario('Salão e taxas', [
@@ -1277,10 +1301,13 @@ function editarSalao() {
     { k: 'intervalo', rot: 'Intervalo da agenda', tipo: 'select', ops: [[15, '15 min'], [30, '30 min'], [60, '1 hora']] },
     { k: 'debito', rot: 'Taxa débito (%)', tipo: 'number', step: '0.01' }, { k: 'credito', rot: 'Taxa crédito (%)', tipo: 'number', step: '0.01' },
     { k: 'pix', rot: 'Taxa Pix (%)', tipo: 'number', step: '0.01' },
-    { k: 'descontaTaxa', rot: 'Descontar a taxa do cartão antes de calcular a comissão', tipo: 'check', cheio: true }
-  ], { ...c, ...c.taxas }, v => {
+    { k: 'descontaTaxa', rot: 'Descontar a taxa do cartão antes de calcular a comissão', tipo: 'check', cheio: true },
+    ...DIAS_SEMANA.map((d, i) => ({ k: 'f' + i, rot: `Fechado ${i === 0 || i === 6 ? 'aos' : 'às'} ${d.toLowerCase()}s`, tipo: 'check' }))
+  ], { ...c, ...c.taxas, ...Object.fromEntries(DIAS_SEMANA.map((d, i) => ['f' + i, (c.fechado || []).includes(i)])) }, v => {
     if (toMin(v.fecha) <= toMin(v.abre)) return 'O horário de fechar precisa ser depois do de abrir.';
-    Object.assign(c, { nome: v.nome || 'Guria Dourada', slogan: v.slogan, abre: v.abre, fecha: v.fecha, intervalo: +v.intervalo, descontaTaxa: v.descontaTaxa });
+    if (DIAS_SEMANA.every((d, i) => v['f' + i])) return 'Deixe pelo menos um dia aberto.';
+    Object.assign(c, { nome: v.nome || 'Guria Dourada', slogan: v.slogan, abre: v.abre, fecha: v.fecha, intervalo: +v.intervalo, descontaTaxa: v.descontaTaxa,
+      fechado: DIAS_SEMANA.map((d, i) => v['f' + i] ? i : -1).filter(i => i >= 0) });
     Object.assign(c.taxas, { debito: +v.debito || 0, credito: +v.credito || 0, pix: +v.pix || 0 });
     salvar(); render(); toast('Configuração salva. Vale para as próximas vendas.');
   });
@@ -1340,8 +1367,17 @@ function agendarRefresh() {
   tAutoRefresh = setTimeout(async () => {
     if (!sb || !db) return;
     try {
-      const { data } = await sb.from('registros').select('tipo,id,dados')
-        .eq('tipo','ags').order('id');
+      const data = [];
+      for (let ultimo = ''; ;) { // paginação por cursor: exclusões no meio não fazem pular registros
+        const { data: pg, error } = await sb.from('registros').select('tipo,id,dados').eq('tipo', 'ags').gt('id', ultimo).order('id').limit(1000);
+        if (error) throw error;
+        data.push(...pg); if (pg.length < 1000) break; ultimo = pg[pg.length - 1].id;
+      }
+      {
+        const remotos = new Set(data.map(r => r.id));
+        db.ags.filter(a => !remotos.has(a.id) && ('ags:' + a.id) in snap && est(a) === snap['ags:' + a.id])
+          .forEach(a => aplicarRemoto({ eventType: 'DELETE', old: { tipo: 'ags', id: a.id } }));
+      }
       if (data) {
         const antes = db.ags.filter(a => a.status === 'pendente').length;
         data.forEach(r => {
