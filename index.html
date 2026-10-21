@@ -96,6 +96,8 @@ h2{font-family:var(--serif);font-size:36px;line-height:1.1;font-weight:600;lette
 .item.on b{font-weight:600}
 .vazio{text-align:center;color:var(--muted);padding:36px 12px;font-size:16px}
 .item .desc{font-size:15px;color:var(--muted)}
+.foto{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--fill)}
+.foto.ini{display:grid;place-items:center;font-family:var(--serif);font-size:22px;font-weight:600;color:var(--gold)}
 
 /* Dias e horários */
 .mes{font-size:15px;font-weight:600;color:var(--muted);margin:0 2px 10px}
@@ -349,7 +351,7 @@ function telaServicos() {
 function telaProf() {
   app.innerHTML = cabecalho('Com quem você prefere?', 'Ou deixe com a gente e veja mais horários.') +
     `<div class="lista"><button class="item ${!sel.prof ? 'on' : ''}" data-p=""><span class="txt"><b>Primeira disponível</b><span class="desc">Mais opções de horário</span></span>${CHECK}</button>
-    ${profs.map(p => `<button class="item ${sel.prof?.id === p.id ? 'on' : ''}" data-p="${p.id}"><span class="txt"><b>${esc(p.nome)}</b></span>${CHECK}</button>`).join('')}</div>`;
+    ${profs.map(p => `<button class="item ${sel.prof?.id === p.id ? 'on' : ''}" data-p="${p.id}">${p.foto ? `<img class="foto" src="${esc(p.foto)}" alt="" loading="lazy">` : `<span class="foto ini">${esc(String(p.nome || '').charAt(0).toUpperCase())}</span>`}<span class="txt"><b>${esc(p.nome)}</b></span>${CHECK}</button>`).join('')}</div>`;
   app.querySelectorAll('.item').forEach(b => b.onclick = () => {
     sel.prof = b.dataset.p ? profs.find(p => p.id === b.dataset.p) : null; sel.data = sel.hora = null;
     app.querySelectorAll('.item').forEach(x => x.classList.toggle('on', x === b));

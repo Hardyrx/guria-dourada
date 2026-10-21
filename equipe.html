@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Equipe | Guria Dourada</title>
+<meta name="theme-color" content="#22150D">
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#F5F5F7; --card:#FFFFFF; --ink:#1D1D1F; --muted:#6E6E73; --faint:#86868B;
+  --hair:rgba(0,0,0,.09); --fill:#EDEDF0; --black:#2A1A10;
+  --gold:#A9802F; --gold-soft:#F5EBD6; --ok:#2E7D5B; --ok-soft:#E5F2EB; --erro:#D70015;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --ease:cubic-bezier(.25,.1,.25,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scrollbar-width:none}
+html::-webkit-scrollbar{display:none}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45;letter-spacing:-.015em;min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:10px}
+[hidden]{display:none!important}
+
+/* Topo */
+.topo{background:radial-gradient(120% 140% at 50% 0%,#3A2416 0%,#22150D 55%,#160D07 100%);color:#F1E4C8;padding:calc(14px + env(safe-area-inset-top)) 20px 14px}
+.topo .in{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.topo img.logo{width:96px;height:auto;display:block}
+.topo .quem{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:15px}
+.av{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#4A3020;display:grid;place-items:center;font-family:var(--serif);font-size:20px;color:#F1E4C8;overflow:hidden;flex-shrink:0}
+.av img{width:100%;height:100%;object-fit:cover}
+
+/* Abas */
+.abas{position:sticky;top:0;z-index:5;background:rgba(245,245,247,.86);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);box-shadow:0 1px 0 var(--hair)}
+.abas .in{max-width:720px;margin:0 auto;padding:10px 20px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.abas .in::-webkit-scrollbar{display:none}
+.aba{white-space:nowrap;border-radius:99px;padding:8px 15px;font-size:15px;font-weight:500;color:var(--muted);transition:background .25s var(--ease),color .25s var(--ease)}
+.aba.on{background:var(--black);color:#fff}
+.aba .n{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:99px;background:var(--gold);color:#fff;font-size:12px;font-weight:700;line-height:20px;text-align:center}
+
+main{max-width:720px;margin:0 auto;padding:26px 20px 80px}
+h1{font-family:var(--serif);font-size:36px;font-weight:600;line-height:1.1}
+.sub{color:var(--muted);margin:6px 0 22px}
+h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:28px 4px 10px}
+.lista{background:var(--card);border-radius:18px;overflow:hidden}
+.linha{display:flex;align-items:center;gap:14px;padding:14px 18px;position:relative}
+.linha+.linha::before{content:"";position:absolute;top:0;left:18px;right:0;height:1px;background:var(--hair)}
+.linha .txt{flex:1;min-width:0}
+.linha b{display:block;font-weight:600;font-size:16px}
+.linha .meta{font-size:14px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 12px}
+.linha .valor{font-weight:600;white-space:nowrap}
+.vazio{text-align:center;color:var(--muted);padding:34px 16px;font-size:15px}
+
+/* Agenda */
+.dias{display:flex;gap:8px;overflow-x:auto;margin:0 -20px 18px;padding:2px 20px 6px;scrollbar-width:none}
+.dias::-webkit-scrollbar{display:none}
+.dia{flex:0 0 60px;border-radius:16px;padding:10px 0 9px;text-align:center;background:#fff;position:relative;transition:background .25s var(--ease),color .25s var(--ease)}
+.dia span{display:block;font-size:12.5px;color:var(--muted)}
+.dia b{display:block;font-size:22px;font-weight:600;line-height:1.2}
+.dia i{position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--gold)}
+.dia.on{background:var(--black);color:#fff}.dia.on span{color:#B3A086}
+.at{display:grid;grid-template-columns:62px 1fr;gap:14px;padding:16px 18px;position:relative}
+.at+.at::before{content:"";position:absolute;top:0;left:18px;right:0;height:1px;background:var(--hair)}
+.at .h{font-size:18px;font-weight:600;line-height:1.2}
+.at .h small{display:block;font-size:13px;font-weight:400;color:var(--faint)}
+.at b{display:block;font-size:16px;font-weight:600}
+.at .meta{font-size:14px;color:var(--muted);margin-top:2px}
+.st{display:inline-block;font-size:12.5px;font-weight:600;border-radius:99px;padding:2px 9px;margin-top:8px}
+.st.pendente{background:var(--gold-soft);color:#7A5A1C}.st.agendado{background:var(--ok-soft);color:var(--ok)}.st.fechado{background:var(--fill);color:var(--muted)}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{background:var(--black);color:#fff;font-weight:500;border-radius:99px;padding:10px 18px;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:opacity .2s var(--ease),transform .1s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.claro{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}
+.btn.zap{background:#1F9E55}
+.btn.perigo{background:#fff;color:var(--erro);box-shadow:inset 0 0 0 1px var(--hair)}
+.btn.cheio{width:100%;justify-content:center;padding:14px}
+
+/* Ganhos */
+.resumo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.resumo div{background:#fff;border-radius:18px;padding:16px 18px}
+.resumo span{display:block;font-size:14px;color:var(--muted)}
+.resumo strong{display:block;font-size:24px;font-weight:600;letter-spacing:-.02em;margin-top:2px}
+.filtros{display:flex;gap:8px;margin-bottom:16px}
+.filtro{border-radius:99px;padding:7px 15px;font-size:15px;font-weight:500;background:#fff;box-shadow:inset 0 0 0 1px var(--hair)}
+.filtro.on{background:var(--black);color:#fff;box-shadow:none}
+
+/* Perfil */
+.perfil{background:#fff;border-radius:22px;padding:26px 20px;text-align:center}
+.perfil .av{width:112px;height:112px;margin:0 auto 14px;font-size:48px;background:var(--gold-soft);color:var(--gold)}
+.perfil h2{font-family:var(--serif);font-size:30px;font-weight:600}
+.perfil p{color:var(--muted);font-size:15px}
+.campo{text-align:left;margin-top:18px}
+.campo label{display:block;font-size:14px;color:var(--muted);margin:0 4px 6px}
+.campo input{width:100%;border:0;border-radius:12px;padding:14px 16px;font-size:17px;background:var(--bg)}
+.campo input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--gold);background:#fff}
+.msg{font-size:14px;margin-top:10px;min-height:1em;color:var(--muted)}
+.msg.erro{color:var(--erro)}
+
+/* Entrada */
+.entrada{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(120% 70% at 50% 0%,#3A2416 0%,#22150D 48%,#160D07 100%)}
+.caixa{width:100%;max-width:380px;text-align:center;color:#F1E4C8}
+.caixa img{width:190px;max-width:60%;margin:0 auto 18px;display:block}
+.caixa h1{color:#F1E4C8;font-size:32px}
+.caixa .sub{color:#B3A086}
+.caixa form{background:#fff;color:var(--ink);border-radius:22px;padding:22px 20px;text-align:left;margin-top:18px}
+.caixa .campo:first-child{margin-top:0}
+.caixa .btn{margin-top:18px}
+.caixa .ajuda{font-size:13px;color:#9C8A70;margin-top:16px}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--black);color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.2);animation:sobe .3s var(--ease)}
+@keyframes sobe{from{opacity:0;transform:translate(-50%,10px)}}
+.entra{animation:entra .45s var(--ease)}
+@keyframes entra{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (min-width:700px){h1{font-size:42px}.resumo strong{font-size:28px}}
+</style>
+</head>
+<body>
+<div id="raiz"></div>
+
+<script>
+const URL_SB = 'https://tfoazcjbnubedrwndqtc.supabase.co';
+const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmb2F6Y2pibnViZWRyd25kcXRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjA4MjMsImV4cCI6MjEwNTU5NjgyM30.B_00xsYqcW5r27Uo5ZpUec3Mb6ZVCnNztvsGOBLzW20';
+
+const $ = s => document.querySelector(s);
+const raiz = $('#raiz');
+const pad = n => String(n).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const hoje = () => iso(new Date());
+const addDias = (s, n) => { const d = new Date(s + 'T12:00'); d.setDate(d.getDate() + n); return iso(d); };
+const toMin = h => { const [a, b] = String(h).split(':').map(Number); return a * 60 + b; };
+const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const brl = v => (+v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dataBR = s => String(s).split('-').reverse().join('/');
+const SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const SEM_LONGO = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const MES_LONGO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const ST = { pendente: 'Aguardando você', agendado: 'Confirmado', fechado: 'Atendido' };
+const primeiro = n => String(n || '').trim().split(/\s+/)[0] || '';
+const inicial = n => esc(String(n || '?').trim().charAt(0).toUpperCase());
+function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2800); }
+function limparNome(nome) {
+  const MIN = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'sem', 'para', 'a', 'o', 'em']);
+  let s = String(nome || '').replace(/\p{Extended_Pictographic}|️/gu, '').replace(/\s*\/\s*/g, ' / ').replace(/\(\s*/g, '(').replace(/\s*\)/g, ')').replace(/\s*-\s*/g, ', ').replace(/\s+/g, ' ').trim();
+  return s.toLowerCase().split(' ').map((w, i) => (i && MIN.has(w)) ? w : w.replace(/^(\(?)(\p{L})/u, (m, p, l) => p + l.toUpperCase())).join(' ').replace(/\s*,\s*$/, '');
+}
+function linkZap(tel, msg) { const d = String(tel || '').replace(/\D/g, ''); if (d.length < 10) return ''; return 'https://wa.me/' + (d.length <= 11 ? '55' + d : d) + '?text=' + encodeURIComponent(msg); }
+function mascaraTel(v) { const d = v.replace(/\D/g, '').slice(0, 11); if (d.length <= 2) return d.length ? `(${d}` : ''; if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`; if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`; return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; }
+
+let sb, dados = null, aba = 'agenda', dia = hoje(), periodo = 'este', tAtualiza = null;
+
+/* ============ Entrada ============ */
+function telaLogin(msg) {
+  raiz.innerHTML = `<div class="entrada"><div class="caixa entra"><img src="logo.png" alt="Guria Dourada Beauty Clinic">
+    <h1>Área da equipe</h1><p class="sub">Entre com o e-mail e a senha que o salão te passou.</p>
+    <form id="fLogin"><div class="campo"><label for="lgE">E-mail</label><input id="lgE" type="email" autocomplete="username" required></div>
+    <div class="campo"><label for="lgS">Senha</label><input id="lgS" type="password" autocomplete="current-password" required></div>
+    <button class="btn cheio">Entrar</button><div class="msg ${msg ? 'erro' : ''}" id="lgMsg">${esc(msg || '')}</div></form>
+    <p class="ajuda">Esqueceu a senha? Peça uma nova para o salão.</p></div></div>`;
+  $('#fLogin').onsubmit = async ev => {
+    ev.preventDefault();
+    const m = $('#lgMsg'); m.className = 'msg'; m.textContent = 'Entrando...';
+    const { error } = await sb.auth.signInWithPassword({ email: $('#lgE').value.trim(), password: $('#lgS').value });
+    if (error) {
+      m.className = 'msg erro';
+      m.textContent = /banned/i.test(error.message) ? 'Seu acesso está bloqueado. Fale com o salão.' : /Invalid login/i.test(error.message) ? 'E-mail ou senha incorretos.' : 'Não foi possível entrar. Confira a internet.';
+      return;
+    }
+    carregar(true);
+  };
+}
+function telaAviso(titulo, texto, botao) {
+  raiz.innerHTML = `<div class="entrada"><div class="caixa entra"><img src="logo.png" alt="Guria Dourada Beauty Clinic"><h1>${esc(titulo)}</h1><p class="sub">${texto}</p>${botao || ''}</div></div>`;
+  const s = $('#avSair'); if (s) s.onclick = sair;
+}
+
+async function iniciar() {
+  if (!window.supabase) { telaAviso('Sem conexão', 'A página não carregou por completo. Confira a internet e recarregue.'); return; }
+  sb = window.supabase.createClient(URL_SB, KEY_SB, { auth: { persistSession: true, autoRefreshToken: true } });
+  const { data } = await sb.auth.getSession();
+  if (!data.session) { telaLogin(); return; }
+  carregar(true);
+}
+
+async function carregar(primeiraVez) {
+  const { data, error } = await sb.rpc('meu_painel');
+  if (error) {
+    if (/JWT|session|auth/i.test(error.message)) { await sb.auth.signOut(); telaLogin('Sua sessão expirou. Entre de novo.'); return; }
+    if (primeiraVez) telaAviso('Sem conexão', 'Não foi possível abrir sua agenda. Confira a internet e recarregue a página.');
+    return;
+  }
+  if (!data) {
+    const { data: adm } = await sb.rpc('eh_admin');
+    if (adm) { telaAviso('Você é admin', 'Este acesso abre o painel completo do salão.', '<a class="btn cheio" href="/adm" style="margin-top:8px">Abrir o painel</a><button class="btn claro cheio" id="avSair" style="margin-top:10px">Sair</button>'); return; }
+    await sb.auth.signOut(); telaLogin('Seu acesso não está ativo. Fale com o salão.'); return;
+  }
+  dados = data;
+  if (!dados.ver_comissao && aba === 'ganhos') aba = 'agenda';
+  const digitando = !primeiraVez && document.activeElement?.tagName === 'INPUT';
+  if (!digitando) render();
+  clearTimeout(tAtualiza); tAtualiza = setTimeout(() => carregar(false), 60000);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && dados) carregar(false); });
+async function sair() { await sb.auth.signOut(); dados = null; clearTimeout(tAtualiza); telaLogin('Você saiu.'); }
+
+/* ============ Telas ============ */
+function render() {
+  const p = dados.perfil || {}, pend = (dados.agenda || []).filter(a => a.status === 'pendente');
+  const abas = [['agenda', 'Agenda'], ['pedidos', 'Pedidos'], ['servicos', 'Serviços'], ...(dados.ver_comissao ? [['ganhos', 'Ganhos']] : []), ['perfil', 'Perfil']];
+  const foco = document.activeElement?.id, rolagem = scrollY;
+  raiz.innerHTML = `<header class="topo"><div class="in"><img class="logo" src="logo.png" alt="Guria Dourada">
+      <div class="quem"><span>Olá, ${esc(primeiro(p.nome))}</span><span class="av">${p.foto ? `<img src="${esc(p.foto)}" alt="">` : inicial(p.nome)}</span></div></div></header>
+    <nav class="abas"><div class="in">${abas.map(([k, l]) => `<button class="aba ${k === aba ? 'on' : ''}" data-aba="${k}">${l}${k === 'pedidos' && pend.length ? `<span class="n">${pend.length}</span>` : ''}</button>`).join('')}</div></nav>
+    <main id="conteudo"></main>`;
+  raiz.querySelectorAll('.aba').forEach(b => b.onclick = () => { aba = b.dataset.aba; render(); scrollTo(0, 0); });
+  ({ agenda: telaAgenda, pedidos: telaPedidos, servicos: telaServicos, ganhos: telaGanhos, perfil: telaPerfil })[aba]();
+  if (foco && document.getElementById(foco)) document.getElementById(foco).focus();
+  else scrollTo(0, rolagem);
+}
+
+function cartao(a, comData) {
+  const fim = toHM(toMin(a.hora) + (+a.dur || 60));
+  const dt = new Date(a.data + 'T12:00');
+  const msg = a.status === 'pendente'
+    ? `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Recebi seu pedido de ${limparNome(a.servico)} para ${SEM_LONGO[dt.getDay()].toLowerCase()}, ${dataBR(a.data)} às ${a.hora}. Está confirmado! Te espero.`
+    : `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Passando para lembrar do seu horário: ${SEM_LONGO[dt.getDay()].toLowerCase()}, ${dataBR(a.data)} às ${a.hora}, ${limparNome(a.servico)}. Te espero!`;
+  const z = linkZap(a.tel, msg);
+  return `<div class="at"><div class="h">${esc(a.hora)}<small>até ${fim}</small></div><div>
+    <b>${esc(a.cliente || 'Cliente')}</b>
+    <div class="meta">${esc(limparNome(a.servico))} · ${a.preco ? brl(a.preco) : 'Sob avaliação'}${comData ? ` · ${SEM[dt.getDay()]} ${dataBR(a.data).slice(0, 5)}` : ''}</div>
+    <span class="st ${esc(a.status)}">${ST[a.status] || esc(a.status)}</span>
+    ${a.status === 'pendente' ? `<div class="acoes"><button class="btn" data-conf="${esc(a.id)}" data-zap="${esc(z)}">Confirmar</button><button class="btn perigo" data-rec="${esc(a.id)}">Recusar</button></div>`
+      : (z && a.status === 'agendado' && a.data >= hoje()) ? `<div class="acoes"><a class="btn zap" href="${esc(z)}" target="_blank" rel="noopener">WhatsApp</a></div>` : ''}
+  </div></div>`;
+}
+function ligarCartoes(el) {
+  el.querySelectorAll('[data-conf]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    const zap = b.dataset.zap, janela = zap ? window.open('', '_blank') : null;
+    const { error } = await sb.rpc('responder_pedido', { p_id: b.dataset.conf, p_acao: 'confirmar' });
+    if (error) { if (janela) janela.close(); toast(error.message); b.disabled = false; return; }
+    if (janela) janela.location = zap;
+    toast('Horário confirmado'); carregar(false);
+  });
+  el.querySelectorAll('[data-rec]').forEach(b => b.onclick = async () => {
+    if (!confirm('Recusar este pedido? O horário volta a ficar livre no site.')) return;
+    b.disabled = true;
+    const { error } = await sb.rpc('responder_pedido', { p_id: b.dataset.rec, p_acao: 'recusar' });
+    if (error) { toast(error.message); b.disabled = false; return; }
+    toast('Pedido recusado'); carregar(false);
+  });
+}
+
+function telaAgenda() {
+  const ag = dados.agenda || [], c = $('#conteudo');
+  const dias = []; for (let i = 0; i < 21; i++) dias.push(addDias(hoje(), i));
+  if (!dias.includes(dia)) dia = hoje();
+  const doDia = ag.filter(a => a.data === dia);
+  const d = new Date(dia + 'T12:00');
+  c.innerHTML = `<h1>Minha agenda</h1><p class="sub">${SEM_LONGO[d.getDay()]}, ${d.getDate()} de ${MES_LONGO[d.getMonth()]}. ${doDia.length ? `${doDia.length} atendimento${doDia.length > 1 ? 's' : ''}.` : 'Dia livre.'}</p>
+    <div class="dias">${dias.map(x => { const dd = new Date(x + 'T12:00'); const tem = ag.some(a => a.data === x);
+      return `<button class="dia ${x === dia ? 'on' : ''}" data-d="${x}"><span>${x === hoje() ? 'Hoje' : SEM[dd.getDay()]}</span><b>${dd.getDate()}</b>${tem ? '<i></i>' : ''}</button>`; }).join('')}</div>
+    ${doDia.length ? `<div class="lista entra">${doDia.map(a => cartao(a)).join('')}</div>` : '<div class="lista"><div class="vazio">Nenhum atendimento neste dia.</div></div>'}`;
+  c.querySelectorAll('.dia').forEach(b => b.onclick = () => { dia = b.dataset.d; render(); });
+  c.querySelector('.dia.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  ligarCartoes(c);
+}
+
+function telaPedidos() {
+  const p = (dados.agenda || []).filter(a => a.status === 'pendente' && a.data >= hoje()), c = $('#conteudo');
+  c.innerHTML = `<h1>Pedidos do site</h1><p class="sub">${p.length ? 'Confirme e avise a cliente pelo WhatsApp.' : 'Nenhum pedido aguardando você.'}</p>
+    ${p.length ? `<div class="lista entra">${p.map(a => cartao(a, true)).join('')}</div>` : ''}`;
+  ligarCartoes(c);
+}
+
+function telaServicos() {
+  const s = (dados.servicos || []).map(x => ({ ...x, nome: limparNome(x.nome) })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  $('#conteudo').innerHTML = `<h1>Serviços e preços</h1><p class="sub">Tabela atual do salão.</p>
+    <div class="lista">${s.map(x => `<div class="linha"><div class="txt"><b>${esc(x.nome)}</b><div class="meta">${+x.dur >= 60 ? (+x.dur / 60).toString().replace('.', ',') + ' h' : esc(x.dur) + ' min'}</div></div><span class="valor">${+x.preco ? brl(x.preco) : 'Avaliação'}</span></div>`).join('') || '<div class="vazio">Nenhum serviço cadastrado.</div>'}</div>`;
+}
+
+function telaGanhos() {
+  const agora = new Date(), ini = new Date(agora.getFullYear(), agora.getMonth() - (periodo === 'passado' ? 1 : 0), 1);
+  const fim = new Date(ini.getFullYear(), ini.getMonth() + 1, 0), de = iso(ini), ate = iso(fim);
+  const l = (dados.comissoes || []).filter(x => x.data >= de && x.data <= ate);
+  const tot = l.reduce((t, x) => t + (+x.valor || 0), 0), base = l.reduce((t, x) => t + (+x.base || 0), 0);
+  $('#conteudo').innerHTML = `<h1>Meus ganhos</h1><p class="sub">Comissão de ${MES_LONGO[ini.getMonth()]} de ${ini.getFullYear()}.</p>
+    <div class="filtros"><button class="filtro ${periodo === 'este' ? 'on' : ''}" data-p="este">Este mês</button><button class="filtro ${periodo === 'passado' ? 'on' : ''}" data-p="passado">Mês passado</button></div>
+    <div class="resumo"><div><span>Comissão</span><strong>${brl(tot)}</strong></div><div><span>Você produziu</span><strong>${brl(base)}</strong></div></div>
+    <h3>Atendimentos</h3>
+    <div class="lista">${l.map(x => `<div class="linha"><div class="txt"><b>${esc(limparNome(x.item))}</b><div class="meta">${dataBR(x.data)} · ${esc(x.pct)}% de ${brl(x.base)}</div></div><span class="valor">${brl(x.valor)}</span></div>`).join('') || '<div class="vazio">Nenhum atendimento pago neste mês ainda.</div>'}</div>`;
+  $('#conteudo').querySelectorAll('.filtro').forEach(b => b.onclick = () => { periodo = b.dataset.p; render(); });
+}
+
+function telaPerfil() {
+  const p = dados.perfil || {};
+  $('#conteudo').innerHTML = `<div class="perfil entra">
+    <div class="av">${p.foto ? `<img src="${esc(p.foto)}" alt="Sua foto">` : inicial(p.nome)}</div>
+    <h2>${esc(p.nome)}</h2><p>${esc(dados.email || '')}</p>
+    <label class="btn claro" style="margin-top:14px;cursor:pointer">${p.foto ? 'Trocar foto' : 'Adicionar foto'}<input type="file" id="foto" accept="image/*" hidden></label>
+    <div class="msg" id="fotoMsg">Sua foto aparece para as clientes na hora de agendar.</div>
+    <div class="campo"><label for="tel">Seu WhatsApp</label><input id="tel" type="tel" inputmode="numeric" value="${esc(mascaraTel(p.tel || ''))}" placeholder="(51) 99999-9999"></div>
+    <button class="btn cheio" id="salvarTel" style="margin-top:12px">Salvar WhatsApp</button><div class="msg" id="telMsg"></div>
+  </div>
+  <button class="btn perigo cheio" id="sair" style="margin-top:16px">Sair</button>`;
+  const t = $('#tel'); t.oninput = () => { t.value = mascaraTel(t.value); };
+  $('#salvarTel').onclick = async () => {
+    const m = $('#telMsg'), v = t.value.trim(); m.className = 'msg'; m.textContent = 'Salvando...';
+    const { error } = await sb.rpc('atualizar_meu_perfil', { p_tel: v, p_foto: '' });
+    if (error) { m.className = 'msg erro'; m.textContent = error.message; return; }
+    m.textContent = 'WhatsApp salvo.'; dados.perfil.tel = v;
+  };
+  $('#foto').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    const m = $('#fotoMsg'); m.className = 'msg'; m.textContent = 'Enviando foto...';
+    try {
+      const blob = await reduzir(f, 720);
+      const caminho = `${p.id}/foto-${Date.now()}.jpg`;
+      const { error } = await sb.storage.from('equipe').upload(caminho, blob, { contentType: 'image/jpeg', upsert: true });
+      if (error) throw error;
+      const url = sb.storage.from('equipe').getPublicUrl(caminho).data.publicUrl;
+      const { error: e2 } = await sb.rpc('atualizar_meu_perfil', { p_tel: '', p_foto: url });
+      if (e2) throw e2;
+      dados.perfil.foto = url; toast('Foto atualizada'); render();
+    } catch (er) { m.className = 'msg erro'; m.textContent = 'Não foi possível enviar a foto. Tente uma imagem menor.'; }
+  };
+  $('#sair').onclick = sair;
+}
+
+/* Reduz a foto no próprio celular antes de enviar (quadrada, até 720 px) */
+function reduzir(arquivo, lado) {
+  return new Promise((ok, falha) => {
+    const img = new Image(), url = URL.createObjectURL(arquivo);
+    img.onload = () => {
+      const m = Math.min(img.width, img.height), cv = document.createElement('canvas'), t = Math.min(lado, m);
+      cv.width = cv.height = t;
+      cv.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, t, t);
+      URL.revokeObjectURL(url);
+      cv.toBlob(b => b ? ok(b) : falha(new Error('foto')), 'image/jpeg', 0.86);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('foto')); };
+    img.src = url;
+  });
+}
+
+iniciar();
+</script>
+</body>
+</html>
