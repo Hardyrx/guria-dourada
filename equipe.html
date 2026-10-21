@@ -136,6 +136,10 @@ h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:28px 4px 10px}
 @keyframes aparece{from{opacity:0}}
 @keyframes sobeF{from{transform:translateY(40px);opacity:0}}
 @media (min-width:700px){.fundo{align-items:center}.folha{border-radius:24px}.horas{grid-template-columns:repeat(6,1fr)}}
+.ganhos{display:block;width:100%;text-align:left;background:linear-gradient(135deg,#3A2416,#22150D);color:#F1E4C8;border-radius:20px;padding:16px 20px;margin:0 0 18px;box-shadow:0 10px 26px rgba(42,26,16,.18)}
+.ganhos span{display:block;font-size:14px;color:#C9B89A}
+.ganhos strong{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em;color:#F7EEDD;margin:2px 0}
+.ganhos small{font-size:13px;color:#B3A086}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--black);color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.2);animation:sobe .3s var(--ease)}
 @keyframes sobe{from{opacity:0;transform:translate(-50%,10px)}}
 .entra{animation:entra .45s var(--ease)}
@@ -366,11 +370,19 @@ function telaAgenda() {
   if (!dias.includes(dia)) dia = hoje();
   const doDia = ag.filter(a => a.data === dia);
   const d = new Date(dia + 'T12:00');
+  let ganhos = '';
+  if (dados.ver_comissao) {
+    const mes = hoje().slice(0, 7), l = (dados.comissoes || []).filter(x => String(x.data).startsWith(mes));
+    const tot = l.reduce((t, x) => t + (+x.valor || 0), 0), nomeMes = MES_LONGO[+mes.slice(5) - 1];
+    ganhos = `<button class="ganhos" id="verGanhos"><span>Seus ganhos em ${nomeMes}</span><strong>${brl(tot)}</strong><small>${l.length} atendimento${l.length === 1 ? '' : 's'} pago${l.length === 1 ? '' : 's'} · ver detalhes</small></button>`;
+  }
   c.innerHTML = `<h1>Minha agenda</h1><p class="sub">${SEM_LONGO[d.getDay()]}, ${d.getDate()} de ${MES_LONGO[d.getMonth()]}. ${doDia.length ? `${doDia.length} atendimento${doDia.length > 1 ? 's' : ''}.` : 'Dia livre.'}</p>
+    ${ganhos}
     <div class="dias">${dias.map(x => { const dd = new Date(x + 'T12:00'); const tem = ag.some(a => a.data === x);
       return `<button class="dia ${x === dia ? 'on' : ''}" data-d="${x}"><span>${x === hoje() ? 'Hoje' : SEM[dd.getDay()]}</span><b>${dd.getDate()}</b>${tem ? '<i></i>' : ''}</button>`; }).join('')}</div>
     ${doDia.length ? `<div class="lista entra">${doDia.map(a => cartao(a)).join('')}</div>` : '<div class="lista"><div class="vazio">Nenhum atendimento neste dia.</div></div>'}`;
   c.querySelectorAll('.dia').forEach(b => b.onclick = () => { dia = b.dataset.d; render(); });
+  const vg = $('#verGanhos'); if (vg) vg.onclick = () => { aba = 'ganhos'; render(); scrollTo(0, 0); };
   c.querySelector('.dia.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   ligarCartoes(c);
 }
