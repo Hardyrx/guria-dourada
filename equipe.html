@@ -232,16 +232,21 @@ function render() {
 function cartao(a, comData) {
   const fim = toHM(toMin(a.hora) + (+a.dur || 60));
   const dt = new Date(a.data + 'T12:00');
-  const msg = a.status === 'pendente'
-    ? `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Recebi seu pedido de ${limparNome(a.servico)} para ${SEM_LONGO[dt.getDay()].toLowerCase()}, ${dataBR(a.data)} às ${a.hora}. Está confirmado! Te espero.`
-    : `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Passando para lembrar do seu horário: ${SEM_LONGO[dt.getDay()].toLowerCase()}, ${dataBR(a.data)} às ${a.hora}, ${limparNome(a.servico)}. Te espero!`;
-  const z = linkZap(a.tel, msg);
+  const eu = primeiro(dados.perfil?.nome), ela = primeiro(a.cliente), quandoTxt = `${SEM_LONGO[dt.getDay()].toLowerCase()}, ${dataBR(a.data)} às ${a.hora}`;
+  const futuro = a.data >= hoje();
+  const msgConf = `Olá ${ela}! Aqui é a ${eu}, da Guria Dourada. Recebi seu pedido de ${limparNome(a.servico)} para ${quandoTxt}. Está confirmado! Te espero.`;
+  const msgLivre = a.status === 'agendado' && futuro
+    ? `Olá ${ela}! Aqui é a ${eu}, da Guria Dourada. Passando para lembrar do seu horário: ${quandoTxt}, ${limparNome(a.servico)}. Te espero!`
+    : `Olá ${ela}! Aqui é a ${eu}, da Guria Dourada.`;
+  const z = linkZap(a.tel, msgConf), zLivre = linkZap(a.tel, msgLivre);
+  const temTel = !!zLivre;
   return `<div class="at"><div class="h">${esc(a.hora)}<small>até ${fim}</small></div><div>
     <b>${esc(a.cliente || 'Cliente')}</b>
     <div class="meta">${esc(limparNome(a.servico))} · ${a.preco ? brl(a.preco) : 'Sob avaliação'}${comData ? ` · ${SEM[dt.getDay()]} ${dataBR(a.data).slice(0, 5)}` : ''}</div>
+    <div class="meta">${temTel ? `WhatsApp ${esc(mascaraTel(String(a.tel).replace(/^\+?55(?=\d{10,11}$)/, '')))}` : 'Cliente sem WhatsApp cadastrado. Peça o número ao salão.'}</div>
     <span class="st ${esc(a.status)}">${ST[a.status] || esc(a.status)}</span>
-    ${a.status === 'pendente' ? `<div class="acoes"><button class="btn" data-conf="${esc(a.id)}" data-zap="${esc(z)}">Confirmar</button><button class="btn perigo" data-rec="${esc(a.id)}">Recusar</button></div>`
-      : (z && a.status === 'agendado' && a.data >= hoje()) ? `<div class="acoes"><a class="btn zap" href="${esc(z)}" target="_blank" rel="noopener">WhatsApp</a></div>` : ''}
+    <div class="acoes">${a.status === 'pendente' ? `<button class="btn" data-conf="${esc(a.id)}" data-zap="${esc(z)}">Confirmar</button><button class="btn perigo" data-rec="${esc(a.id)}">Recusar</button>` : ''}
+      ${temTel ? `<a class="btn zap" href="${esc(zLivre)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</div>
   </div></div>`;
 }
 function ligarCartoes(el) {
