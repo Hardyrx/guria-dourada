@@ -144,14 +144,17 @@ begin
   if coalesce(p_tel, '') <> '' and length(regexp_replace(p_tel, '\D', '', 'g')) not between 10 and 13 then
     raise exception 'WhatsApp inválido.';
   end if;
-  -- null = não mexe; '' = apaga; texto = grava
-  update public.registros
-  set dados = case when p_foto is null then x else case when p_foto = '' then x - 'foto' else x || jsonb_build_object('foto', p_foto) end end,
-      atualizado = now()
-  from (select case when p_tel is null then dados when p_tel = '' then dados - 'tel'
-                    else dados || jsonb_build_object('tel', p_tel) end as x
-        from public.registros where tipo = 'profs' and id = v_prof) atual
-  where tipo = 'profs' and id = v_prof;
+  -- null = não mexe; '' = apaga; texto = grava. Cada update trava a linha e lê o valor mais novo.
+  if p_tel is not null then
+    update public.registros
+    set dados = case when p_tel = '' then dados - 'tel' else dados || jsonb_build_object('tel', p_tel) end, atualizado = now()
+    where tipo = 'profs' and id = v_prof;
+  end if;
+  if p_foto is not null then
+    update public.registros
+    set dados = case when p_foto = '' then dados - 'foto' else dados || jsonb_build_object('foto', p_foto) end, atualizado = now()
+    where tipo = 'profs' and id = v_prof;
+  end if;
 end;
 $$;
 

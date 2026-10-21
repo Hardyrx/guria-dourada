@@ -348,13 +348,14 @@ function aplicarRemoto(p) {
   if (p.eventType === 'DELETE') {
     const { tipo, id } = p.old || {}; if (!tipo) return;
     const k = tipo + ':' + id; if (!(k in snap)) return;
+    if (COLS.includes(tipo)) { const loc = db[tipo].find(r => r.id === id); if (loc && est(loc) !== snap[k]) return; } // edição local pendente vence
     delete snap[k];
     if (COLS.includes(tipo)) db[tipo] = db[tipo].filter(r => r.id !== id);
   } else {
     const { tipo, id, dados } = p.new || {}; if (!tipo) return;
     const k = tipo + ':' + id, v = est(dados);
     if (snap[k] === v) return;
-    if (COLS.includes(tipo)) { const loc = db[tipo].find(r => r.id === id); if (loc && k in snap && est(loc) !== snap[k]) return; }
+    if (COLS.includes(tipo) && k in snap) { const loc = db[tipo].find(r => r.id === id); if (!loc || est(loc) !== snap[k]) return; } // edição ou exclusão local pendente vence
     if (tipo === 'config' && db.config && 'config:config' in snap && est(db.config) !== snap['config:config']) return;
     snap[k] = v;
     if (tipo === 'config') db.config = dados;

@@ -75,15 +75,19 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "bloquear" || acao === "liberar") {
-      const bloquear = acao === "bloquear";
-      // Primeiro a regra do banco (corta o acesso aos dados na hora), depois o login
-      const { error: e1 } = await adm.from("equipe").update({ ativo: !bloquear }).eq("user_id", atual.user_id);
-      if (e1) return json({ erro: "Não foi possível alterar o acesso." }, 500);
-      const { error: e2 } = await adm.auth.admin.updateUserById(atual.user_id, { ban_duration: bloquear ? "876000h" : "none" });
-      if (e2) {
-        if (!bloquear) await adm.from("equipe").update({ ativo: false }).eq("user_id", atual.user_id);
-        return json({ erro: bloquear ? "Os dados foram bloqueados, mas o login não. Tente de novo." : "Não foi possível liberar o login." }, 500);
+      if (acao === "bloquear") {
+        // Bloquear: primeiro corta os dados (vale na hora), depois o login
+        const { error: e1 } = await adm.from("equipe").update({ ativo: false }).eq("user_id", atual.user_id);
+        if (e1) return json({ erro: "Não foi possível bloquear o acesso." }, 500);
+        const { error: e2 } = await adm.auth.admin.updateUserById(atual.user_id, { ban_duration: "876000h" });
+        if (e2) return json({ erro: "Os dados foram bloqueados, mas o login não. Tente de novo." }, 500);
+        return json({ ok: true });
       }
+      // Liberar: primeiro o login, depois os dados
+      const { error: e3 } = await adm.auth.admin.updateUserById(atual.user_id, { ban_duration: "none" });
+      if (e3) return json({ erro: "Não foi possível liberar o login." }, 500);
+      const { error: e4 } = await adm.from("equipe").update({ ativo: true }).eq("user_id", atual.user_id);
+      if (e4) return json({ erro: "O login foi liberado, mas os dados não. Tente de novo." }, 500);
       return json({ ok: true });
     }
 
