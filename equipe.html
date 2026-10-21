@@ -116,6 +116,21 @@ h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:28px 4px 10px}
 .caixa .btn{margin-top:18px}
 .caixa .ajuda{font-size:13px;color:#9C8A70;margin-top:16px}
 
+/* Folha de remarcar */
+.fundo{position:fixed;inset:0;z-index:30;background:rgba(29,20,13,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:aparece .25s var(--ease)}
+.folha{background:#fff;width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:sobeF .35s var(--ease)}
+.folha h2{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1.1}
+.folha .sub{margin-bottom:16px}
+.folha .dias{margin:0 -20px 4px;padding:2px 20px 8px}
+.folha .dia:disabled{opacity:.3;cursor:default}
+.horas{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.hora{border-radius:12px;padding:12px 0;font-size:16px;font-weight:500;background:var(--bg);text-align:center;transition:background .2s var(--ease),color .2s var(--ease)}
+.hora.on{background:var(--black);color:#fff}
+.folha .rodape{display:flex;gap:8px;margin-top:20px}
+.folha .rodape .btn{flex:1;justify-content:center;padding:13px}
+@keyframes aparece{from{opacity:0}}
+@keyframes sobeF{from{transform:translateY(40px);opacity:0}}
+@media (min-width:700px){.fundo{align-items:center}.folha{border-radius:24px}.horas{grid-template-columns:repeat(6,1fr)}}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--black);color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.2);animation:sobe .3s var(--ease)}
 @keyframes sobe{from{opacity:0;transform:translate(-50%,10px)}}
 .entra{animation:entra .45s var(--ease)}
@@ -143,6 +158,7 @@ const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 const brl = v => (+v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const dataBR = s => String(s).split('-').reverse().join('/');
+const minutosAgora = () => { const [h, m] = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()).split(':').map(Number); return h * 60 + m; };
 const SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const SEM_LONGO = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const MES_LONGO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -246,10 +262,25 @@ function cartao(a, comData) {
     <div class="meta">${temTel ? `WhatsApp ${esc(mascaraTel(String(a.tel).replace(/^\+?55(?=\d{10,11}$)/, '')))}` : 'Cliente sem WhatsApp cadastrado. Peça o número ao salão.'}</div>
     <span class="st ${esc(a.status)}">${ST[a.status] || esc(a.status)}</span>
     <div class="acoes">${a.status === 'pendente' ? `<button class="btn" data-conf="${esc(a.id)}" data-zap="${esc(z)}">Confirmar</button><button class="btn perigo" data-rec="${esc(a.id)}">Recusar</button>` : ''}
-      ${temTel ? `<a class="btn zap" href="${esc(zLivre)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</div>
+      ${temTel ? `<a class="btn zap" href="${esc(zLivre)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+      ${futuro && (a.status === 'pendente' || a.status === 'agendado') ? `<button class="btn claro" data-rem="${esc(a.id)}">Remarcar</button>` : ''}
+      ${futuro && a.status === 'agendado' ? `<button class="btn perigo" data-des="${esc(a.id)}">Desmarcar</button>` : ''}</div>
   </div></div>`;
 }
+function quandoTexto(data, hora) { const d = new Date(data + 'T12:00'); return `${SEM_LONGO[d.getDay()].toLowerCase()}, ${dataBR(data)} às ${hora}`; }
 function ligarCartoes(el) {
+  el.querySelectorAll('[data-rem]').forEach(b => b.onclick = () => abrirRemarcar(dados.agenda.find(x => x.id === b.dataset.rem)));
+  el.querySelectorAll('[data-des]').forEach(b => b.onclick = async () => {
+    const a = dados.agenda.find(x => x.id === b.dataset.des); if (!a) return;
+    if (!confirm(`Desmarcar ${primeiro(a.cliente) || 'a cliente'} de ${quandoTexto(a.data, a.hora)}? O horário volta a ficar livre no site.`)) return;
+    b.disabled = true;
+    const z = linkZap(a.tel, `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Precisei desmarcar seu horário de ${quandoTexto(a.data, a.hora)}. Me chama aqui para combinarmos um novo horário?`);
+    const janela = z ? window.open('', '_blank') : null;
+    const { error } = await sb.rpc('desmarcar_meu_horario', { p_id: a.id });
+    if (error) { if (janela) janela.close(); toast(/Could not find/i.test(error.message) ? 'Função ainda não ativada no banco. Fale com o salão.' : error.message); b.disabled = false; return; }
+    if (janela) janela.location = z;
+    toast('Horário desmarcado'); carregar(false);
+  });
   el.querySelectorAll('[data-conf]').forEach(b => b.onclick = async () => {
     b.disabled = true;
     const zap = b.dataset.zap, janela = zap ? window.open('', '_blank') : null;
@@ -267,9 +298,65 @@ function ligarCartoes(el) {
   });
 }
 
+/* Remarcar: escolhe dia e horário livre na agenda dela */
+function livresDela(data, a) {
+  const c = dados.salao || {}; if (!c.abre || !c.fecha) return [];
+  if ((c.fechado || []).includes(new Date(data + 'T12:00').getDay())) return [];
+  const ini = toMin(c.abre), fim = toMin(c.fecha), passo = +(c.intervalo || 30), d = +a.dur || 60;
+  const corte = data === hoje() ? minutosAgora() + 30 : -1;
+  const oc = (dados.agenda || []).filter(x => x.id !== a.id && x.data === data);
+  const out = [];
+  for (let m = ini; m + d <= fim; m += passo) {
+    if (m <= corte) continue;
+    if (!oc.some(x => m < toMin(x.hora) + (+x.dur || 60) && toMin(x.hora) < m + d)) out.push(toHM(m));
+  }
+  return out;
+}
+function abrirRemarcar(a) {
+  if (!a) return;
+  const dias = []; for (let i = 0; i <= 60; i++) { const d = addDias(hoje(), i); dias.push({ d, n: livresDela(d, a).length }); }
+  let diaR = dias.find(x => x.d === a.data && x.n)?.d || dias.find(x => x.n)?.d || null, hora = null;
+  const f = document.createElement('div'); f.className = 'fundo';
+  f.addEventListener('mousedown', e => { if (e.target === f) f.remove(); });
+  document.body.appendChild(f);
+  const desenhar = () => {
+    const hs = diaR ? livresDela(diaR, a) : [];
+    f.innerHTML = `<div class="folha" role="dialog" aria-modal="true"><h2>Remarcar</h2>
+      <p class="sub">${esc(a.cliente || 'Cliente')} · ${esc(limparNome(a.servico))}. Hoje está em ${quandoTexto(a.data, a.hora)}.</p>
+      ${diaR ? `<div class="dias">${dias.map(x => { const dd = new Date(x.d + 'T12:00');
+        return `<button class="dia ${x.d === diaR ? 'on' : ''}" data-d="${x.d}" ${x.n ? '' : 'disabled'}><span>${x.d === hoje() ? 'Hoje' : SEM[dd.getDay()]}</span><b>${dd.getDate()}</b></button>`; }).join('')}</div>
+      ${hs.length ? `<div class="horas">${hs.map(h => `<button class="hora ${h === hora ? 'on' : ''}" data-h="${h}">${h}</button>`).join('')}</div>` : '<div class="vazio">Sem horário livre neste diaR.</div>'}`
+      : '<div class="vazio">Sem horário livre nos próximos 60 dias.</div>'}
+      <div class="msg erro" id="remMsg"></div>
+      <div class="rodape"><button class="btn claro" data-fechar>Cancelar</button><button class="btn" id="remOk" ${hora ? '' : 'disabled'}>${a.tel ? 'Remarcar e avisar' : 'Remarcar'}</button></div></div>`;
+    f.querySelector('.dia.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    f.querySelector('[data-fechar]').onclick = () => f.remove();
+    f.querySelectorAll('.dia').forEach(b => b.onclick = () => { diaR = b.dataset.d; hora = null; desenhar(); });
+    f.querySelectorAll('.hora').forEach(b => b.onclick = () => { hora = b.dataset.h; desenhar(); });
+    const ok = f.querySelector('#remOk');
+    ok.onclick = async () => {
+      if (!hora) return;
+      const novoDia = diaR, novaHora = hora; // valores travados: a folha não muda enquanto salva
+      f.querySelector('.folha').style.pointerEvents = 'none';
+      ok.disabled = true; ok.textContent = 'Salvando...';
+      const z = linkZap(a.tel, `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Seu horário de ${limparNome(a.servico)} foi remarcado para ${quandoTexto(novoDia, novaHora)}. Te espero!`);
+      const janela = z ? window.open('', '_blank') : null;
+      const { error } = await sb.rpc('remarcar_meu_horario', { p_id: a.id, p_data: novoDia, p_hora: novaHora });
+      if (error) {
+        if (janela) janela.close();
+        f.querySelector('#remMsg').textContent = /Could not find/i.test(error.message) ? 'Função ainda não ativada no banco. Fale com o salão.' : error.message;
+        f.querySelector('.folha').style.pointerEvents = ''; ok.disabled = false; ok.textContent = a.tel ? 'Remarcar e avisar' : 'Remarcar'; return;
+      }
+      if (janela) janela.location = z;
+      f.remove(); toast('Horário remarcado'); dia = novoDia; carregar(false);
+    };
+  };
+  desenhar();
+}
+
 function telaAgenda() {
   const ag = dados.agenda || [], c = $('#conteudo');
-  const dias = []; for (let i = 0; i < 21; i++) dias.push(addDias(hoje(), i));
+  const dias = []; for (let i = 0; i <= 60; i++) dias.push(addDias(hoje(), i));
   if (!dias.includes(dia)) dia = hoje();
   const doDia = ag.filter(a => a.data === dia);
   const d = new Date(dia + 'T12:00');
