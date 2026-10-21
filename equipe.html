@@ -336,17 +336,19 @@ function abrirRemarcar(a) {
     const ok = f.querySelector('#remOk');
     ok.onclick = async () => {
       if (!hora) return;
+      const novoDia = diaR, novaHora = hora; // valores travados: a folha não muda enquanto salva
+      f.querySelector('.folha').style.pointerEvents = 'none';
       ok.disabled = true; ok.textContent = 'Salvando...';
-      const z = linkZap(a.tel, `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Seu horário de ${limparNome(a.servico)} foi remarcado para ${quandoTexto(diaR, hora)}. Te espero!`);
+      const z = linkZap(a.tel, `Olá ${primeiro(a.cliente)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Seu horário de ${limparNome(a.servico)} foi remarcado para ${quandoTexto(novoDia, novaHora)}. Te espero!`);
       const janela = z ? window.open('', '_blank') : null;
-      const { error } = await sb.rpc('remarcar_meu_horario', { p_id: a.id, p_data: diaR, p_hora: hora });
+      const { error } = await sb.rpc('remarcar_meu_horario', { p_id: a.id, p_data: novoDia, p_hora: novaHora });
       if (error) {
         if (janela) janela.close();
         f.querySelector('#remMsg').textContent = /Could not find/i.test(error.message) ? 'Função ainda não ativada no banco. Fale com o salão.' : error.message;
-        ok.disabled = false; ok.textContent = a.tel ? 'Remarcar e avisar' : 'Remarcar'; return;
+        f.querySelector('.folha').style.pointerEvents = ''; ok.disabled = false; ok.textContent = a.tel ? 'Remarcar e avisar' : 'Remarcar'; return;
       }
       if (janela) janela.location = z;
-      f.remove(); toast('Horário remarcado'); dia = diaR; carregar(false);
+      f.remove(); toast('Horário remarcado'); dia = novoDia; carregar(false);
     };
   };
   desenhar();
@@ -354,7 +356,7 @@ function abrirRemarcar(a) {
 
 function telaAgenda() {
   const ag = dados.agenda || [], c = $('#conteudo');
-  const dias = []; for (let i = 0; i < 21; i++) dias.push(addDias(hoje(), i));
+  const dias = []; for (let i = 0; i <= 60; i++) dias.push(addDias(hoje(), i));
   if (!dias.includes(dia)) dia = hoje();
   const doDia = ag.filter(a => a.data === dia);
   const d = new Date(dia + 'T12:00');
