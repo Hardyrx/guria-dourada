@@ -163,6 +163,26 @@ footer{text-align:center;color:var(--faint);font-size:13px;margin-top:40px}
 @keyframes vai{from{opacity:0;transform:translateX(36px)}}
 @keyframes volta{from{opacity:0;transform:translateX(-36px)}}
 @keyframes entra{from{opacity:0;transform:translateY(16px)}}
+/* Versão web: conteúdo à esquerda, resumo fixo à direita */
+.lateral{display:none}
+@media (min-width:1000px){
+  .wrap{max-width:1120px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:56px;align-items:start;padding:56px 32px 96px}
+  .wrap>footer{grid-column:1/-1}
+  .lateral{display:block;position:sticky;top:28px;background:var(--card);border-radius:22px;padding:26px 24px 24px;box-shadow:0 1px 0 var(--hair),0 20px 50px rgba(42,26,16,.07)}
+  .lateral h3{font-family:var(--serif);font-size:26px;font-weight:600;margin-bottom:14px}
+  .lateral .vazio-lat{color:var(--muted);font-size:15px;line-height:1.5;padding:4px 0 6px}
+  .lat-linha{display:flex;justify-content:space-between;gap:14px;font-size:15px;padding:9px 0;border-top:1px solid var(--hair)}
+  .lat-linha:first-of-type{border-top:0}
+  .lat-linha span:first-child{color:var(--muted)}
+  .lat-linha span:last-child{text-align:right}
+  .lat-total{display:flex;justify-content:space-between;font-size:18px;font-weight:600;border-top:1px solid var(--hair);margin-top:6px;padding-top:14px}
+  .lateral .btn{width:100%;margin-top:20px}
+  .lateral .ajuda{font-size:13px;color:var(--faint);text-align:center;margin-top:12px}
+  .barra{display:none}
+  .wrap{padding-bottom:96px}
+  .horas{grid-template-columns:repeat(6,1fr)}
+  .hero{min-height:min(78svh,760px)}
+}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (min-width:700px){.hero h1{font-size:52px}.palco{width:340px}.hero p{font-size:21px}h2{font-size:44px}.horas{grid-template-columns:repeat(5,1fr)}}
 </style>
@@ -177,6 +197,7 @@ footer{text-align:center;color:var(--faint);font-size:13px;margin-top:40px}
 
 <main class="wrap" id="agenda">
   <div id="app" aria-live="polite"><div class="lista" style="margin-top:20px"><div class="esq"></div><div class="esq"></div><div class="esq"></div><div class="esq"></div></div></div>
+  <aside class="lateral" id="lateral" aria-label="Seu pedido"></aside>
   <footer>Guria Dourada Beauty Clinic</footer>
 </main>
 
@@ -391,6 +412,21 @@ function atualizarBarra() {
   const btn = $('#barraBtn');
   btn.textContent = passo === 4 ? 'Pedir horário' : 'Continuar';
   btn.disabled = !podeAvancar();
+  desenharLateral();
+}
+function desenharLateral() {
+  const L = $('#lateral'); if (!L) return;
+  const n = sel.servs.length, rotulo = passo === 4 ? 'Pedir horário' : 'Continuar';
+  if (!n) { L.innerHTML = '<h3>Seu pedido</h3><p class="vazio-lat">Escolha um ou mais serviços para ver o resumo aqui.</p>'; return; }
+  L.innerHTML = `<h3>Seu pedido</h3>
+    ${sel.servs.map(s => `<div class="lat-linha"><span>${esc(s.nome)}</span><span>${s.preco ? brl(s.preco) : 'Avaliação'}</span></div>`).join('')}
+    ${passo >= 2 ? `<div class="lat-linha"><span>Profissional</span><span>${esc(sel.prof?.nome || 'Primeira disponível')}</span></div>` : ''}
+    ${sel.hora ? `<div class="lat-linha"><span>Quando</span><span>${quando()}</span></div>` : ''}
+    <div class="lat-linha"><span>Duração</span><span>${dur(durTotal())}</span></div>
+    <div class="lat-total"><span>Total</span><span>${totalTxt()}</span></div>
+    <button class="btn" id="latBtn" ${podeAvancar() ? '' : 'disabled'}>${rotulo}</button>
+    <p class="ajuda">Confirmamos pelo WhatsApp.</p>`;
+  $('#latBtn').onclick = () => $('#barraBtn').onclick();
 }
 $('#barraBtn').onclick = () => { if (!podeAvancar()) return; if (passo < 4) ir(passo + 1); else enviar(); };
 
@@ -398,6 +434,7 @@ $('#barraBtn').onclick = () => { if (!podeAvancar()) return; if (passo < 4) ir(p
 async function enviar() {
   const btn = $('#barraBtn'), err = $('#err');
   btn.disabled = true; btn.textContent = 'Enviando...'; err.textContent = '';
+  const lb = $('#latBtn'); if (lb) { lb.disabled = true; lb.textContent = 'Enviando...'; }
   const { data: agId, error } = await sb.rpc('solicitar_agendamento', {
     p_nome: form.nome.trim(), p_tel: form.tel.trim(), p_niver: form.niver || '', p_data: sel.data, p_hora: sel.hora,
     p_prof: sel.prof?.id || null, p_servs: sel.servs.map(s => s.id)
@@ -417,7 +454,7 @@ function linkAgenda() {
   return 'https://calendar.google.com/calendar/render?' + p;
 }
 function sucesso(agId) {
-  barra.classList.remove('on');
+  barra.classList.remove('on'); $('#lateral')?.remove(); document.querySelector('.wrap').style.gridTemplateColumns = '1fr';
   app.classList.remove('vai', 'volta'); void app.offsetWidth; app.classList.add('entra');
   app.innerHTML = `<div class="ok"><svg viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="40" pathLength="1"/><path d="M26 43l11 11 21-23" pathLength="1"/></svg>
     <h2>Pedido enviado</h2>
