@@ -348,12 +348,15 @@ function aplicarRemoto(p) {
   if (p.eventType === 'DELETE') {
     const { tipo, id } = p.old || {}; if (!tipo) return;
     const k = tipo + ':' + id; if (!(k in snap)) return;
+    if (COLS.includes(tipo)) { const loc = db[tipo].find(r => r.id === id); if (loc && est(loc) !== snap[k]) return; } // edição local pendente vence
     delete snap[k];
     if (COLS.includes(tipo)) db[tipo] = db[tipo].filter(r => r.id !== id);
   } else {
     const { tipo, id, dados } = p.new || {}; if (!tipo) return;
     const k = tipo + ':' + id, v = est(dados);
     if (snap[k] === v) return;
+    if (COLS.includes(tipo) && k in snap) { const loc = db[tipo].find(r => r.id === id); if (!loc || est(loc) !== snap[k]) return; } // edição ou exclusão local pendente vence
+    if (tipo === 'config' && db.config && 'config:config' in snap && est(db.config) !== snap['config:config']) return;
     snap[k] = v;
     if (tipo === 'config') db.config = dados;
     else if (tipo === 'meta') Object.assign(db, dados);
@@ -394,8 +397,8 @@ function telaLogin(msg) {
     ev.preventDefault();
     const m = e.querySelector('.msg'); m.textContent = 'Entrando...';
     const { error } = await sb.auth.signInWithPassword({ email: e.querySelector('#lgE').value.trim(), password: e.querySelector('#lgS').value });
-    if (error) { m.textContent = /Invalid login/i.test(error.message) ? 'E-mail ou senha incorretos.' : 'Não consegui entrar. Confira a internet.'; return; }
-    entrar();
+    if (error) { m.textContent = /banned/i.test(error.message) ? 'Este acesso está bloqueado.' : /Invalid login/i.test(error.message) ? 'E-mail ou senha incorretos.' : 'Não consegui entrar. Confira a internet.'; return; }
+    entrarSeAdmin();
   };
   const t = e.querySelector('#trocarCfg'); if (t) t.onclick = () => { try { localStorage.removeItem('ps_url'); localStorage.removeItem('ps_key'); } catch (er) {} telaConfig(); };
 }
@@ -452,7 +455,24 @@ async function iniciar() {
   sb = window.supabase.createClient(c.u, c.k, { auth: { persistSession: true, autoRefreshToken: true } });
   const { data } = await sb.auth.getSession();
   if (!data.session) { telaLogin(); return; }
-  entrar();
+  entrarSeAdmin();
+}
+/* Só admin usa o painel. Colaboradora é levada para a área da equipe. */
+async function entrarSeAdmin() {
+  const { data: adm, error } = await sb.rpc('eh_admin');
+  const { data: ses } = await sb.auth.getSession(), uidAtual = ses.session?.user?.id || '';
+  let ultimoAdmin = ''; try { ultimoAdmin = localStorage.getItem('ps_admin') || ''; } catch (e) {}
+  if (adm === true) { try { localStorage.setItem('ps_admin', uidAtual); } catch (e) {} entrar(); return; }
+  if (error && uidAtual && uidAtual === ultimoAdmin) { entrar(); return; }
+  if (error) {
+    entrada('<p>Não consegui confirmar seu acesso. Confira a internet e tente de novo.</p><div class="opcoes"><button class="btn pri" id="tentAdm">Tentar de novo</button></div>').querySelector('#tentAdm').onclick = entrarSeAdmin;
+    return;
+  }
+  {
+    const e = entrada(`<p style="font-size:15px">Este login é de colaboradora. A agenda dela fica na área da equipe.</p>
+      <div class="opcoes"><a class="btn pri" href="/equipe">Abrir área da equipe</a><button class="btn" id="sairCol">Sair</button></div>`);
+    e.querySelector('#sairCol').onclick = async () => { await sb.auth.signOut(); telaLogin(); };
+  }
 }
 function migrar() {
   const c = db.config;
@@ -720,7 +740,7 @@ function formulario(titulo, campos, valores, aoSalvar, extra) {
 /* ============ Agenda ============ */
 function conflito(a) {
   const ini = toMin(a.hora), fim = ini + (+a.dur);
-  return db.ags.find(o => o.id !== a.id && o.data === a.data && o.prof === a.prof && o.status !== 'cancelado' &&
+  return db.ags.find(o => o.id !== a.id && o.data === a.data && o.prof === a.prof && o.status !== 'cancelado' && o.status !== 'recusado' &&
     ini < toMin(o.hora) + (+o.dur) && toMin(o.hora) < fim);
 }
 
@@ -774,9 +794,9 @@ function telaAgenda() {
   const { abre, fecha, intervalo } = db.config;
   const ini = toMin(abre), fim = toMin(fecha), passo = +intervalo;
   const nSlots = Math.ceil((fim - ini) / passo);
-  const ags = db.ags.filter(a => a.data === diaAgenda && a.status !== 'cancelado');
+  const ags = db.ags.filter(a => a.data === diaAgenda && a.status !== 'cancelado' && a.status !== 'recusado');
   const nomeDia = new Date(diaAgenda + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const chips = `<div class="chips">${todas.map(p => { const n = db.ags.filter(a => a.data === diaAgenda && a.prof === p.id && a.status !== 'cancelado').length;
+  const chips = `<div class="chips">${todas.map(p => { const n = db.ags.filter(a => a.data === diaAgenda && a.prof === p.id && a.status !== 'cancelado' && a.status !== 'recusado').length;
     return `<button data-chip="${p.id}" class="${p.id === profCel ? 'on' : ''}"><span class="bola" style="background:${p.cor};color:${p.cor}"></span>${esc(p.nome)}<small>${n}</small></button>`; }).join('')}</div>`;
   let g = `<div class="agenda" style="grid-template-columns:${ehCelular() ? '56px' : '62px'} repeat(${profs.length}, minmax(${ehCelular() ? '0' : '150px'},1fr));grid-template-rows:auto repeat(${nSlots}, 42px)">`;
   g += `<div class="cab" style="grid-column:1;grid-row:1"></div>`;
@@ -1086,8 +1106,9 @@ function telaComissoes() {
 function telaCadastros() {
   const abas = { equipe: 'Equipe', servicos: 'Serviços', produtos: 'Produtos', salao: 'Salão e taxas' };
   let corpo = '';
-  if (abaCad === 'equipe') corpo = tabela(['Cadeira', 'Nome', 'Comissão serviço', 'Comissão produto', 'Situação'],
-    [...db.profs].sort((a, b) => a.cadeira - b.cadeira).map(p => [p.id, [p.cadeira, `<span class="bola" style="background:${p.cor};color:${p.cor}"></span>${esc(p.nome)}`, p.comServ + '%', p.comProd + '%', p.ativo ? 'Ativa' : 'Inativa']]), 'Nova profissional');
+  if (abaCad === 'equipe') corpo = tabela(['Cadeira', 'Nome', 'Comissão serviço', 'Comissão produto', 'Situação', 'Acesso'],
+    [...db.profs].sort((a, b) => a.cadeira - b.cadeira).map(p => [p.id, [p.cadeira, `${p.foto ? `<img src="${esc(p.foto)}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">` : `<span class="bola" style="background:${p.cor};color:${p.cor}"></span>`}${esc(p.nome)}`, p.comServ + '%', p.comProd + '%', p.ativo ? 'Ativa' : 'Inativa',
+      `<button class="btn peq" data-acesso="${p.id}">${textoAcesso(p.id)}</button>`]]), 'Nova profissional');
   if (abaCad === 'servicos') corpo = tabela(['Serviço', 'Preço', 'Duração', 'Comissão'],
     db.servicos.map(s => [s.id, [esc(s.nome), brl(s.preco), s.dur + ' min', s.com === '' || s.com == null ? 'Padrão da profissional' : s.com + '% para todas']]), 'Novo serviço');
   if (abaCad === 'produtos') corpo = tabela(['Produto', 'Preço', 'Comissão'],
@@ -1102,6 +1123,120 @@ function telaCadastros() {
   const novo = $('#novoCad'); if (novo) novo.onclick = () => editarCad(null);
   main.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => editarCad(b.dataset.ed));
   const es = $('#edSalao'); if (es) es.onclick = editarSalao;
+  main.querySelectorAll('[data-acesso]').forEach(b => b.onclick = () => abrirAcesso(b.dataset.acesso));
+  if (abaCad === 'equipe' && !acessos) carregarAcessos();
+}
+
+/* ============ Acesso das colaboradoras ============ */
+let acessos = null;
+const acessoDe = id => (acessos || []).find(a => a.prof_id === id);
+function textoAcesso(id) { if (!acessos) return 'Acesso'; const a = acessoDe(id); return !a ? 'Criar acesso' : a.ativo ? 'Acesso ativo' : 'Bloqueado'; }
+async function carregarAcessos() {
+  const { data, error } = await sb.from('equipe').select('prof_id,email,ativo,ver_comissao').eq('papel', 'funcionaria');
+  if (error) return;
+  acessos = data || [];
+  if (tela === 'cadastros' && abaCad === 'equipe') render();
+}
+async function chamarAcesso(corpo) {
+  const { data, error } = await sb.functions.invoke('equipe-acesso', { body: corpo });
+  if (error) {
+    let msg = 'Não foi possível concluir. Confira a internet.';
+    try { const j = await error.context.json(); if (j?.erro) msg = j.erro; } catch (e) {}
+    throw new Error(msg);
+  }
+  return data;
+}
+function msgCredenciais(p, r) {
+  return `Olá ${p.nome.split(' ')[0]}! Este é o seu acesso à agenda da Guria Dourada.\n\nEndereço: ${location.origin}/equipe\nE-mail: ${r.email}\nSenha: ${r.senha}\n\nLá você vê seus horários, confirma os pedidos do site e coloca sua foto.`;
+}
+function abrirAcesso(id) {
+  const p = prof(id); if (!p) return;
+  const a = acessoDe(id);
+  const f = modal(`<h2>Acesso de ${esc(p.nome)}</h2>
+    <div style="display:flex;align-items:center;gap:16px;margin:6px 0 16px">
+      <div style="width:76px;height:76px;border-radius:50%;overflow:hidden;background:var(--rosa-2);display:grid;place-items:center;font-size:30px;color:var(--ouro-claro);flex-shrink:0">${p.foto ? `<img src="${esc(p.foto)}" alt="" style="width:100%;height:100%;object-fit:cover">` : esc(p.nome.charAt(0))}</div>
+      <div><label class="btn peq" style="cursor:pointer">${p.foto ? 'Trocar foto' : 'Adicionar foto'}<input type="file" id="acFoto" accept="image/*" hidden></label>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px">A foto aparece no site de agendamento.</div></div>
+    </div>
+    ${!a ? `<p style="color:var(--muted);font-size:14px">Ela ainda não tem login. Digite o e-mail dela e o sistema cria a senha.</p>
+      <div class="campos"><label class="cheio">E-mail da colaboradora<input id="acEmail" type="email" autocomplete="off"></label></div>
+      <div class="acoes"><button class="btn pri" id="acCriar">Criar acesso</button></div>`
+    : `<p style="font-size:14px">Login: <b>${esc(a.email || '')}</b> · ${a.ativo ? '<span style="color:var(--verde)">Ativo</span>' : '<span style="color:var(--alerta)">Bloqueado</span>'}</p>
+      <label class="check" style="margin:12px 0"><input type="checkbox" id="acCom" ${a.ver_comissao ? 'checked' : ''}> Mostrar a comissão dela na área da equipe</label>
+      <div class="acoes" style="flex-wrap:wrap"><button class="btn" id="acSenha">Gerar nova senha</button>
+      <button class="btn ${a.ativo ? 'perigo' : 'pri'}" id="acBloq">${a.ativo ? 'Bloquear acesso' : 'Liberar acesso'}</button>
+      <button class="btn perigo" id="acRem">Remover acesso</button></div>`}
+    <div id="acRes" style="margin-top:14px;font-size:14px"></div>
+    <div class="acoes"><button class="btn" data-fechar>Fechar</button></div>`);
+  const res = f.querySelector('#acRes');
+  const ocupado = (b, t) => { b.disabled = true; b.dataset.t = b.textContent; b.textContent = t; };
+  const livre = b => { b.disabled = false; b.textContent = b.dataset.t; };
+  const mostrarSenha = r => {
+    const z = p.tel ? 'https://wa.me/55' + String(p.tel).replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '') + '?text=' + encodeURIComponent(msgCredenciais(p, r)) : '';
+    res.innerHTML = `<div class="aviso" style="margin:0">Senha de <b>${esc(r.email)}</b>: <b style="font-size:17px;letter-spacing:1px">${esc(r.senha)}</b><br>Anote ou envie agora. Ela não aparece de novo.</div>
+      <div class="acoes" style="margin-top:10px">${z ? `<a class="btn pri" href="${z}" target="_blank" rel="noopener">Enviar pelo WhatsApp dela</a>` : '<span style="color:var(--muted)">Cadastre o WhatsApp dela em Editar para enviar direto.</span>'}
+      <button class="btn" id="acCopiar">Copiar mensagem</button></div>`;
+    res.querySelector('#acCopiar').onclick = () => navigator.clipboard?.writeText(msgCredenciais(p, r)).then(() => toast('Mensagem copiada'));
+  };
+  f.querySelector('[data-fechar]').onclick = () => f.remove();
+  f.querySelector('#acFoto').onchange = async e => {
+    const arq = e.target.files[0]; if (!arq) return;
+    res.textContent = 'Enviando foto...';
+    try {
+      const blob = await reduzirFoto(arq, 720), caminho = `${p.id}/foto-${Date.now()}.jpg`;
+      const { error } = await sb.storage.from('equipe').upload(caminho, blob, { contentType: 'image/jpeg', upsert: true });
+      if (error) throw error;
+      p.foto = sb.storage.from('equipe').getPublicUrl(caminho).data.publicUrl;
+      salvar(); f.remove(); render(); abrirAcesso(id); toast('Foto atualizada');
+    } catch (er) { res.textContent = 'Não foi possível enviar a foto. Tente uma imagem menor.'; }
+  };
+  const criar = f.querySelector('#acCriar');
+  if (criar) criar.onclick = async () => {
+    ocupado(criar, 'Criando...');
+    try { const r = await chamarAcesso({ acao: 'criar', prof_id: id, email: f.querySelector('#acEmail').value }); acessos = null; await carregarAcessos(); f.querySelector('#acEmail').closest('.campos').remove(); criar.remove(); mostrarSenha(r); }
+    catch (er) { res.textContent = er.message; livre(criar); }
+  };
+  const senha = f.querySelector('#acSenha');
+  if (senha) senha.onclick = async () => {
+    if (!confirm('Gerar uma nova senha? A senha antiga para de funcionar.')) return;
+    ocupado(senha, 'Gerando...');
+    try { mostrarSenha(await chamarAcesso({ acao: 'senha', prof_id: id })); } catch (er) { res.textContent = er.message; }
+    livre(senha);
+  };
+  const bloq = f.querySelector('#acBloq');
+  if (bloq) bloq.onclick = async () => {
+    ocupado(bloq, 'Salvando...');
+    try { await chamarAcesso({ acao: a.ativo ? 'bloquear' : 'liberar', prof_id: id }); await carregarAcessos(); f.remove(); abrirAcesso(id); toast(a.ativo ? 'Acesso bloqueado' : 'Acesso liberado'); }
+    catch (er) { res.textContent = er.message; livre(bloq); }
+  };
+  const rem = f.querySelector('#acRem');
+  if (rem) rem.onclick = async () => {
+    if (!confirm(`Remover o login de ${p.nome}? Ela deixa de entrar na área da equipe. A agenda e o histórico continuam.`)) return;
+    ocupado(rem, 'Removendo...');
+    try { await chamarAcesso({ acao: 'remover', prof_id: id }); await carregarAcessos(); f.remove(); toast('Acesso removido'); }
+    catch (er) { res.textContent = er.message; livre(rem); }
+  };
+  const com = f.querySelector('#acCom');
+  if (com) com.onchange = async () => {
+    const { error } = await sb.from('equipe').update({ ver_comissao: com.checked }).eq('prof_id', id).eq('papel', 'funcionaria');
+    if (error) { com.checked = !com.checked; res.textContent = 'Não foi possível salvar.'; return; }
+    a.ver_comissao = com.checked; toast(com.checked ? 'Ela passa a ver a própria comissão' : 'Comissão escondida para ela');
+  };
+}
+/* Reduz a foto antes de enviar (quadrada, até 720 px) */
+function reduzirFoto(arquivo, lado) {
+  return new Promise((ok, falha) => {
+    const img = new Image(), url = URL.createObjectURL(arquivo);
+    img.onload = () => {
+      const m = Math.min(img.width, img.height), cv = document.createElement('canvas'), t = Math.min(lado, m);
+      cv.width = cv.height = t;
+      cv.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, t, t);
+      URL.revokeObjectURL(url);
+      cv.toBlob(b => b ? ok(b) : falha(new Error('foto')), 'image/jpeg', 0.86);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('foto')); };
+    img.src = url;
+  });
 }
 function tabela(cab, linhas, rotNovo) {
   return `<div class="barra"><button class="btn pri" id="novoCad">${rotNovo}</button></div><div class="painel rolagem">
@@ -1114,7 +1249,7 @@ function editarCad(id) {
   if (abaCad === 'equipe') {
     const p = id ? prof(id) : { nome: '', cadeira: db.profs.length + 1, comServ: 40, comProd: 10, cor: '#B8913F', ativo: true };
     formulario(id ? 'Editar profissional' : 'Nova profissional', [
-      { k: 'nome', rot: 'Nome' }, { k: 'cadeira', rot: 'Cadeira', tipo: 'number' },
+      { k: 'nome', rot: 'Nome' }, { k: 'cadeira', rot: 'Cadeira', tipo: 'number' }, { k: 'tel', rot: 'WhatsApp', ph: '(51) 99999-9999' },
       { k: 'comServ', rot: 'Comissão em serviços (%)', tipo: 'number', step: '0.5' }, { k: 'comProd', rot: 'Comissão em produtos (%)', tipo: 'number', step: '0.5' },
       { k: 'cor', rot: 'Cor na agenda', tipo: 'color' }, { k: 'ativo', rot: 'Ativa (aparece na agenda)', tipo: 'check' }
     ], p, v => { if (!v.nome) return 'Digite o nome.'; if (v.comServ === '' || v.comProd === '') return 'Preencha as comissões.'; gravar('profs', v); },
@@ -1208,18 +1343,14 @@ function agendarRefresh() {
       const { data } = await sb.from('registros').select('tipo,id,dados')
         .eq('tipo','ags').order('id');
       if (data) {
-        const novas = data.map(r=>r.dados);
-        const antes = db.ags.filter(a=>a.status==='pendente').length;
-        db.ags = novas;
-        const depois = db.ags.filter(a=>a.status==='pendente').length;
-        if (depois > antes) {
-          toast(`📋 ${depois - antes} nova solicitação pelo site!`);
-          render();
-        } else {
-          // Atualiza badge sem rerender completo
-          const pendentes = db.ags.filter(a=>a.status==='pendente');
-          const bp = $('#badgePend'); if(bp){bp.hidden=!pendentes.length;bp.textContent=pendentes.length;}
-        }
+        const antes = db.ags.filter(a => a.status === 'pendente').length;
+        data.forEach(r => {
+          const local = db.ags.find(a => a.id === r.id);
+          if (local && est(local) !== snap['ags:' + r.id]) return; // edição feita aqui e ainda não enviada
+          aplicarRemoto({ eventType: 'UPDATE', new: { tipo: 'ags', id: r.id, dados: r.dados } });
+        });
+        const depois = db.ags.filter(a => a.status === 'pendente').length;
+        if (depois > antes) toast(`📋 ${depois - antes} nova solicitação pelo site!`);
       }
     } catch(e){}
     agendarRefresh();

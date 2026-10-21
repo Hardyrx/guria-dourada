@@ -96,6 +96,8 @@ h2{font-family:var(--serif);font-size:36px;line-height:1.1;font-weight:600;lette
 .item.on b{font-weight:600}
 .vazio{text-align:center;color:var(--muted);padding:36px 12px;font-size:16px}
 .item .desc{font-size:15px;color:var(--muted)}
+.foto{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--fill)}
+.foto.ini{display:grid;place-items:center;font-family:var(--serif);font-size:22px;font-weight:600;color:var(--gold)}
 
 /* Dias e horários */
 .mes{font-size:15px;font-weight:600;color:var(--muted);margin:0 2px 10px}
@@ -212,7 +214,10 @@ const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const hoje = () => iso(new Date());
+/* Datas e horas sempre no horário de Brasília, seja qual for o fuso do celular da cliente */
+const FUSO = { timeZone: 'America/Sao_Paulo' };
+const hoje = () => new Intl.DateTimeFormat('en-CA', { ...FUSO, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const minutosAgora = () => { const [h, m] = new Intl.DateTimeFormat('pt-BR', { ...FUSO, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()).split(':').map(Number); return h * 60 + m; };
 const addDias = (s, n) => { const d = new Date(s + 'T12:00'); d.setDate(d.getDate() + n); return iso(d); };
 const toMin = h => { const [a, b] = String(h).split(':').map(Number); return a * 60 + b; };
 const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
@@ -285,7 +290,7 @@ const fechado = data => (cfg.fechado || []).includes(new Date(data + 'T12:00').g
 function livres(data, profId, d) {
   if (!cfg.abre || !cfg.fecha || fechado(data)) return [];
   const ini = toMin(cfg.abre), fim = toMin(cfg.fecha), p = +(cfg.intervalo || 30);
-  const agora = new Date(), minAgora = data === hoje() ? agora.getHours() * 60 + agora.getMinutes() + 30 : -1;
+  const minAgora = data === hoje() ? minutosAgora() + 30 : -1;
   const oc = ocupados.filter(a => a.data === data && a.prof === profId);
   const out = [];
   for (let m = ini; m + d <= fim; m += p) {
@@ -349,7 +354,7 @@ function telaServicos() {
 function telaProf() {
   app.innerHTML = cabecalho('Com quem você prefere?', 'Ou deixe com a gente e veja mais horários.') +
     `<div class="lista"><button class="item ${!sel.prof ? 'on' : ''}" data-p=""><span class="txt"><b>Primeira disponível</b><span class="desc">Mais opções de horário</span></span>${CHECK}</button>
-    ${profs.map(p => `<button class="item ${sel.prof?.id === p.id ? 'on' : ''}" data-p="${p.id}"><span class="txt"><b>${esc(p.nome)}</b></span>${CHECK}</button>`).join('')}</div>`;
+    ${profs.map(p => `<button class="item ${sel.prof?.id === p.id ? 'on' : ''}" data-p="${p.id}">${p.foto ? `<img class="foto" src="${esc(p.foto)}" alt="" loading="lazy">` : `<span class="foto ini">${esc(String(p.nome || '').charAt(0).toUpperCase())}</span>`}<span class="txt"><b>${esc(p.nome)}</b></span>${CHECK}</button>`).join('')}</div>`;
   app.querySelectorAll('.item').forEach(b => b.onclick = () => {
     sel.prof = b.dataset.p ? profs.find(p => p.id === b.dataset.p) : null; sel.data = sel.hora = null;
     app.querySelectorAll('.item').forEach(x => x.classList.toggle('on', x === b));
