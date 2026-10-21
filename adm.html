@@ -1292,7 +1292,8 @@ function editarCad(id) {
       { k: 'cor', rot: 'Cor na agenda', tipo: 'color' }, { k: 'ativo', rot: 'Ativa (aparece na agenda)', tipo: 'check' }
     ], p, v => { if (!v.nome) return 'Digite o nome.'; if (v.comServ === '' || v.comProd === '') return 'Preencha as comissões.'; gravar('profs', v); },
     !id ? null : [
-      ...(p.ativo ? [{ rot: 'Desativar', cls: 'perigo', fn: f => { if (!confirm(`Desativar ${p.nome}? Ela sai da agenda e do site. Para voltar, é só marcar "Ativa" de novo.`)) return; p.ativo = false; salvar(); f.remove(); render(); toast('Profissional desativada'); } }] : []),
+      ...(p.ativo ? [{ rot: 'Desativar', cls: 'perigo', fn: f => { if (!confirm(`Desativar ${p.nome}? Ela sai da agenda e do site. Para voltar, é só marcar "Ativa" de novo.`)) return; p.ativo = false; salvar(); f.remove(); render(); toast('Profissional desativada'); } }]
+                 : [{ rot: 'Reativar', cls: 'pri', fn: f => { p.ativo = true; salvar(); f.remove(); render(); toast('Profissional reativada. Ela volta para a agenda e para o site.'); } }]),
       { rot: 'Excluir', cls: 'perigo', fn: async f => {
         const hist = temHistorico(id);
         if (!confirm(hist ? `Excluir ${p.nome}? Ela sai da lista, da agenda e do site, e perde o login. As vendas e comissões antigas continuam com o nome dela nos relatórios.`
