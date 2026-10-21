@@ -1368,10 +1368,10 @@ function agendarRefresh() {
     if (!sb || !db) return;
     try {
       const data = [];
-      for (let de = 0; ; de += 1000) {
-        const { data: pg, error } = await sb.from('registros').select('tipo,id,dados').eq('tipo', 'ags').order('id').range(de, de + 999);
+      for (let ultimo = ''; ;) { // paginação por cursor: exclusões no meio não fazem pular registros
+        const { data: pg, error } = await sb.from('registros').select('tipo,id,dados').eq('tipo', 'ags').gt('id', ultimo).order('id').limit(1000);
         if (error) throw error;
-        data.push(...pg); if (pg.length < 1000) break;
+        data.push(...pg); if (pg.length < 1000) break; ultimo = pg[pg.length - 1].id;
       }
       {
         const remotos = new Set(data.map(r => r.id));

@@ -104,14 +104,18 @@ language plpgsql security definer set search_path = '' as $$
 declare
   v_prof  text := public.meu_prof();
   v_admin boolean := public.eh_admin();
-  a jsonb; v_ini int; v_dur int; v_dono text;
+  a jsonb; v_ini int; v_dur int; v_dono text; v_data text;
 begin
   if v_prof is null and not v_admin then raise exception 'Sem permissão.'; end if;
   if p_acao not in ('confirmar', 'recusar') then raise exception 'Ação inválida.'; end if;
   select dados into a from public.registros where tipo = 'ags' and id = p_id;
   if a is null or (not v_admin and a->>'prof' is distinct from v_prof) then raise exception 'Agendamento não encontrado.'; end if;
-  perform pg_advisory_xact_lock(hashtext('agenda:' || (a->>'data')));
+  v_data := a->>'data';
+  perform pg_advisory_xact_lock(hashtext('agenda:' || v_data));
+  -- relê já travado: o admin pode ter mudado o pedido enquanto esperávamos
   select dados into a from public.registros where tipo = 'ags' and id = p_id for update;
+  if a is null or (not v_admin and a->>'prof' is distinct from v_prof) then raise exception 'Agendamento não encontrado.'; end if;
+  if a->>'data' is distinct from v_data then raise exception 'Esse pedido acabou de ser alterado. Atualize e tente de novo.'; end if;
   if a->>'status' is distinct from 'pendente' then raise exception 'Esse pedido já foi respondido.'; end if;
   v_dono := a->>'prof';
 
