@@ -4,173 +4,170 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Agendar | Guria Dourada Beauty Clinic</title>
-<meta name="theme-color" content="#1E1712">
+<meta name="theme-color" content="#000000">
 <meta name="description" content="Agende seu horário na Guria Dourada Beauty Clinic. Escolha o serviço, a profissional e o melhor horário em poucos toques.">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
 <style>
 :root{
-  --espresso:#1E1712; --espresso-2:#2B211A; --ivory:#FBF7F0; --card:#FFFFFF; --sand:#F3ECE1;
-  --ink:#231B15; --muted:#8B7C6B; --line:#EAE1D4;
-  --gold:#B8913F; --gold-deep:#8C6A22; --gold-soft:#F4EAD6; --champagne:#E3C886;
-  --erro:#B3261E; --ok:#3F8C6C;
-  --serif:"Cormorant Garamond",Georgia,serif;
-  --sans:"Manrope","Segoe UI",system-ui,sans-serif;
-  --r:16px; --sombra:0 1px 2px rgba(35,27,21,.04),0 10px 30px rgba(140,106,34,.08);
+  --bg:#F5F5F7; --card:#FFFFFF; --ink:#1D1D1F; --muted:#6E6E73; --faint:#86868B;
+  --hair:rgba(0,0,0,.09); --fill:#EDEDF0; --black:#1D1D1F;
+  --gold:#A9802F; --gold-light:#E3C886; --erro:#D70015;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Segoe UI",system-ui,sans-serif;
+  --ease:cubic-bezier(.25,.1,.25,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-body{font-family:var(--sans);background:var(--ivory);color:var(--ink);font-size:15px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
-button,input{font:inherit;color:inherit}
-button{cursor:pointer;background:none;border:0}
-:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:17px;line-height:1.47;letter-spacing:-.022em;min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;background:none;border:0;text-align:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:10px}
 
 /* Topo */
-.hero{background:var(--espresso);color:#EFE6D8;text-align:center;padding:34px 20px 70px;position:relative;overflow:hidden}
-.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 320px at 50% -20%,rgba(227,200,134,.18),transparent 70%)}
+.hero{background:#000;color:#F5F5F7;text-align:center;padding:56px 24px 52px;position:relative;overflow:hidden;transition:padding .5s var(--ease)}
+.hero::before{content:"";position:absolute;left:50%;top:42%;width:520px;height:340px;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(227,200,134,.20),transparent);pointer-events:none;animation:luz 2.4s var(--ease) both}
+@keyframes luz{from{opacity:0;transform:translate(-50%,-50%) scale(.7)}}
 .hero>*{position:relative}
-.hero img{width:190px;max-width:62%;height:auto;display:block;margin:0 auto 14px}
-.hero h1{font-family:var(--serif);font-weight:500;font-size:28px;letter-spacing:.3px;color:#F5ECDC}
-.hero h1 em{color:var(--champagne)}
-.hero p{font-size:13.5px;color:#B9A98F;margin-top:6px}
-.info{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:18px}
-.hero{transition:padding .3s}
-body.compacto .hero{padding:18px 20px 56px}
-body.compacto .hero h1,body.compacto .hero p,body.compacto .info{display:none}
-body.compacto .hero img{width:130px;margin-bottom:0}
-.info span{font-size:12px;border:1px solid rgba(227,200,134,.28);color:#D9C9A8;border-radius:99px;padding:5px 12px}
+.marca{position:relative;width:220px;max-width:62%;margin:0 auto 26px;animation:surge 1.3s var(--ease) .2s both}
+.marca img{width:100%;height:auto;display:block}
+.marca::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,248,226,.95) 50%,transparent 60%);background-size:280% 100%;background-position:170% 0;
+  -webkit-mask:url(logo.png) center/contain no-repeat;mask:url(logo.png) center/contain no-repeat;mix-blend-mode:screen;animation:reflexo 1.6s var(--ease) 1.3s forwards}
+@keyframes reflexo{to{background-position:-70% 0}}
+@keyframes surge{from{opacity:0;transform:translateY(14px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.hero h1{font-size:40px;line-height:1.08;font-weight:700;letter-spacing:-.03em;animation:surge 1s var(--ease) .75s both}
+.hero p{font-size:19px;line-height:1.4;color:var(--faint);margin:10px auto 0;max-width:24ch;animation:surge 1s var(--ease) .9s both}
+.hero .horario{font-size:14px;color:#A1A1A6;margin-top:18px;animation:surge 1s var(--ease) 1.05s both}
+body.compacto .hero{padding:20px 24px 18px}
+body.compacto .hero h1,body.compacto .hero p,body.compacto .hero .horario{display:none}
+body.compacto .marca{width:118px;margin-bottom:0}
 
-/* Conteúdo */
-.wrap{max-width:620px;margin:-44px auto 0;padding:0 16px 150px;position:relative}
-.painel{background:var(--card);border-radius:22px;box-shadow:var(--sombra);padding:22px 18px 24px;min-height:300px}
-.topo{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.voltar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);font-size:18px;color:var(--muted);flex-shrink:0}
-.voltar:hover{border-color:var(--gold);color:var(--gold-deep)}
-.passo{font-size:11.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold-deep);font-weight:700}
-.trilho{height:3px;background:var(--sand);border-radius:3px;margin:12px 0 18px;overflow:hidden}
-.trilho i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--champagne));border-radius:3px;transition:width .4s ease}
-h2{font-family:var(--serif);font-weight:600;font-size:27px;line-height:1.15;margin-bottom:4px}
-.sub{color:var(--muted);font-size:14px;margin-bottom:16px}
+/* Página */
+.wrap{max-width:640px;margin:0 auto;padding:34px 20px 160px}
+.topo{display:flex;align-items:center;justify-content:space-between;min-height:30px;margin-bottom:8px}
+.voltar{display:flex;align-items:center;gap:4px;color:var(--gold);font-size:17px;padding:4px 0}
+.voltar svg{margin-left:-4px}
+.passo{font-size:14px;color:var(--faint)}
+.trilho{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 26px}
+.trilho i{height:3px;border-radius:2px;background:#D9D9DE;overflow:hidden;position:relative}
+.trilho i::after{content:"";position:absolute;inset:0;background:var(--black);transform:scaleX(0);transform-origin:left;transition:transform .6s var(--ease)}
+.trilho i.on::after{transform:none}
+h2{font-size:32px;line-height:1.12;font-weight:700;letter-spacing:-.03em}
+.sub{color:var(--muted);font-size:17px;margin:6px 0 24px}
 
-/* Busca e categorias */
-.busca{position:relative;margin-bottom:12px}
-.busca input{width:100%;border:1px solid var(--line);background:var(--ivory);border-radius:12px;padding:12px 14px 12px 40px;font-size:15px}
-.busca input:focus{outline:none;border-color:var(--gold);background:#fff}
-.busca svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
-.cats{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 14px;padding:2px 18px 4px;scrollbar-width:none}
-.cats::-webkit-scrollbar{display:none}
-.cat{white-space:nowrap;border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--muted);transition:.2s}
-.cat.on{background:var(--espresso);border-color:var(--espresso);color:#F5ECDC}
-.grupo{font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:18px 2px 8px}
-.grupo:first-child{margin-top:4px}
+/* Busca e filtros */
+.busca{position:relative;margin-bottom:14px}
+.busca input{width:100%;border:0;background:var(--fill);border-radius:12px;padding:11px 14px 11px 38px;font-size:17px}
+.busca input::placeholder{color:var(--faint)}
+.busca input:focus{outline:none;background:#E5E5EA}
+.busca svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.filtros{display:flex;gap:8px;overflow-x:auto;margin:0 -20px 8px;padding:2px 20px 6px;scrollbar-width:none}
+.filtros::-webkit-scrollbar{display:none}
+.filtro{white-space:nowrap;border-radius:99px;padding:7px 15px;font-size:15px;font-weight:500;background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair);transition:background .25s var(--ease),color .25s var(--ease)}
+.filtro.on{background:var(--black);color:#fff;box-shadow:none}
 
-/* Serviços */
-.serv{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:8px;background:#fff;transition:border-color .2s,background .2s,transform .1s}
-.serv:active{transform:scale(.99)}
-.serv:hover{border-color:#D8C49A}
-.serv.on{border-color:var(--gold);background:var(--gold-soft)}
-.serv .txt{flex:1;min-width:0}
-.serv b{display:block;font-weight:600;font-size:14.5px;line-height:1.35}
-.serv small{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;margin-top:3px;flex-wrap:wrap}
-.serv .preco{color:var(--gold-deep);font-weight:700}
-.tag{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);border-radius:6px;padding:2px 7px}
-.serv.on .tag{background:#fff}
-.mais{width:30px;height:30px;border-radius:50%;border:1.5px solid #D8C49A;display:grid;place-items:center;flex-shrink:0;color:var(--gold-deep);font-size:18px;line-height:1;transition:.2s}
-.serv.on .mais{background:var(--gold);border-color:var(--gold);color:#fff}
-.vazio{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
-
-/* Profissionais */
-.profs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.prof{border:1px solid var(--line);border-radius:var(--r);padding:18px 10px 16px;text-align:center;background:#fff;transition:.2s}
-.prof:hover{border-color:#D8C49A}
-.prof.on{border-color:var(--gold);background:var(--gold-soft)}
-.av{width:58px;height:58px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;font-family:var(--serif);font-size:26px;font-weight:600;color:#fff}
-.prof b{display:block;font-size:15px}
-.prof small{color:var(--muted);font-size:12.5px}
-.prof.qualquer{grid-column:1/-1;display:flex;align-items:center;gap:14px;text-align:left;padding:16px}
-.prof.qualquer .av{margin:0;width:48px;height:48px;font-size:22px;background:linear-gradient(135deg,var(--champagne),var(--gold))}
+/* Listas agrupadas (estilo iOS) */
+.titulo-grupo{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:30px 4px 10px}
+.titulo-grupo:first-child{margin-top:14px}
+.lista{background:var(--card);border-radius:18px;overflow:hidden}
+.item{display:flex;align-items:center;gap:14px;width:100%;padding:15px 18px;position:relative;transition:background .2s var(--ease)}
+.item+.item::before{content:"";position:absolute;top:0;left:18px;right:0;height:1px;background:var(--hair)}
+.item:active{background:#F2F2F4}
+.item .txt{flex:1;min-width:0}
+.item b{display:block;font-weight:500;font-size:17px;line-height:1.3}
+.item .meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:15px;color:var(--muted);margin-top:3px}
+.item .preco{color:var(--ink)}
+.item .pacote{color:var(--gold);font-weight:600}
+.check{width:22px;height:22px;flex-shrink:0;color:var(--gold);opacity:0;transform:scale(.6);transition:opacity .25s var(--ease),transform .35s cubic-bezier(.34,1.56,.64,1)}
+.item.on .check{opacity:1;transform:none}
+.item.on b{font-weight:600}
+.vazio{text-align:center;color:var(--muted);padding:36px 12px;font-size:16px}
+.item .desc{font-size:15px;color:var(--muted)}
 
 /* Dias e horários */
-.dias{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 6px;padding:4px 18px 10px;scroll-snap-type:x proximity;scrollbar-width:none}
+.mes{font-size:15px;font-weight:600;color:var(--muted);margin:0 2px 10px}
+.dias{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:2px 20px 12px;scroll-snap-type:x proximity;scrollbar-width:none}
 .dias::-webkit-scrollbar{display:none}
-.dia{flex:0 0 62px;scroll-snap-align:start;border:1px solid var(--line);border-radius:14px;padding:10px 0 9px;text-align:center;background:#fff;transition:.2s}
-.dia span{display:block;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:700}
-.dia b{display:block;font-family:var(--serif);font-size:26px;line-height:1.1;font-weight:600}
-.dia small{display:block;font-size:11px;color:var(--muted)}
-.dia.on{background:var(--espresso);border-color:var(--espresso)}
-.dia.on span,.dia.on small{color:#C9B894}.dia.on b{color:#F5ECDC}
-.dia:disabled{opacity:.35;cursor:default}
-.mes{font-size:13px;color:var(--muted);margin:2px 0 8px;font-weight:600}
-.periodo{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:16px 0 8px;display:flex;align-items:center;gap:8px}
-.periodo::after{content:"";flex:1;height:1px;background:var(--line)}
+.dia{flex:0 0 64px;scroll-snap-align:start;border-radius:16px;padding:11px 0 10px;text-align:center;background:#fff;transition:background .25s var(--ease),color .25s var(--ease)}
+.dia span{display:block;font-size:13px;color:var(--muted)}
+.dia b{display:block;font-size:24px;font-weight:600;line-height:1.2;letter-spacing:-.02em}
+.dia.on{background:var(--black);color:#fff}
+.dia.on span{color:#A1A1A6}
+.dia:disabled{opacity:.32;cursor:default}
+.periodo{font-size:15px;font-weight:600;color:var(--muted);margin:22px 2px 10px}
 .horas{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.hora{border:1px solid var(--line);border-radius:12px;padding:11px 0;font-weight:600;font-size:14.5px;background:#fff;transition:.15s}
-.hora:hover{border-color:var(--gold)}
-.hora.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.hora{border-radius:12px;padding:12px 0;font-size:16px;font-weight:500;background:#fff;text-align:center;transition:background .2s var(--ease),color .2s var(--ease)}
+.hora.on{background:var(--black);color:#fff}
 
-/* Formulário e resumo */
-.resumo{background:var(--sand);border-radius:var(--r);padding:16px;margin-bottom:18px}
-.linha{display:flex;justify-content:space-between;gap:14px;padding:6px 0;font-size:14px}
+/* Resumo e formulário */
+.linha{display:flex;justify-content:space-between;gap:16px;padding:13px 18px;font-size:16px;position:relative}
+.linha+.linha::before{content:"";position:absolute;top:0;left:18px;right:0;height:1px;background:var(--hair)}
 .linha span:first-child{color:var(--muted)}
-.linha span:last-child{text-align:right;font-weight:600}
-.linha.total{border-top:1px solid #E2D6C3;margin-top:6px;padding-top:12px;font-size:15.5px}
-.linha.total span:last-child{color:var(--gold-deep)}
-.campo{margin-bottom:14px}
-.campo label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
-.campo label i{font-style:normal;color:var(--muted);font-weight:500}
-.campo input{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:16px;background:#fff}
-.campo input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,63,.15)}
-.nota{font-size:13px;color:var(--muted);background:var(--gold-soft);border-radius:12px;padding:12px 14px;line-height:1.55}
-.erro{color:var(--erro);font-size:13.5px;margin-top:12px;min-height:1em}
+.linha span:last-child{text-align:right}
+.linha.total span{color:var(--ink);font-weight:600}
+.form{margin-top:26px}
+.campo{margin-bottom:12px}
+.campo label{display:block;font-size:14px;color:var(--muted);margin:0 4px 6px}
+.campo input{width:100%;border:0;border-radius:12px;padding:14px 16px;font-size:17px;background:#fff;box-shadow:inset 0 0 0 1px var(--hair);transition:box-shadow .2s var(--ease)}
+.campo input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--gold)}
+.nota{font-size:14px;color:var(--muted);margin:16px 4px 0;line-height:1.5}
+.erro{color:var(--erro);font-size:15px;margin:12px 4px 0;min-height:1em}
 
-/* Barra fixa */
-.barra{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .3s ease}
+/* Barra inferior */
+.barra{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(255,255,255,.78);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);box-shadow:0 -1px 0 var(--hair);padding:12px 20px calc(12px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .45s var(--ease)}
 .barra.on{transform:none}
-.barra .in{max-width:620px;margin:0 auto;display:flex;align-items:center;gap:14px}
-.barra .res{flex:1;min-width:0;font-size:13px;color:var(--muted);line-height:1.35}
-.barra .res b{display:block;color:var(--ink);font-size:16px}
-.btn{background:linear-gradient(180deg,#C49B48,#9E7A2E);color:#fff;font-weight:700;border-radius:14px;padding:14px 22px;font-size:15px;box-shadow:0 6px 18px rgba(158,122,46,.28);transition:.2s;white-space:nowrap}
-.btn:hover{filter:brightness(1.05)}
-.btn:disabled{opacity:.45;box-shadow:none;cursor:default}
-.btn.claro{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.barra .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:16px}
+.barra .res{flex:1;min-width:0;font-size:14px;color:var(--muted);line-height:1.35}
+.barra .res b{display:block;color:var(--ink);font-size:17px;font-weight:600}
+.btn{background:var(--black);color:#fff;font-weight:500;border-radius:99px;padding:13px 26px;font-size:17px;white-space:nowrap;text-align:center;transition:background .2s var(--ease),opacity .2s var(--ease),transform .1s}
+.btn:hover{background:#000}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.3;cursor:default;transform:none}
+.btn.link{background:none;color:var(--gold);padding:10px}
 
 /* Sucesso */
-.ok{text-align:center;padding:16px 4px 4px}
-.selo{width:76px;height:76px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;background:linear-gradient(135deg,var(--champagne),var(--gold));color:#fff;font-size:34px;animation:pop .5s ease}
-@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
-.ok p{color:var(--muted);margin:8px 0 18px}
-.cod{display:inline-block;font-weight:700;letter-spacing:2px;border:1px dashed var(--gold);color:var(--gold-deep);border-radius:10px;padding:8px 16px;margin-bottom:20px}
-.acoes{display:grid;gap:10px}
-.acoes .btn{display:block;text-decoration:none;text-align:center}
+.ok{text-align:center;padding:30px 0 0}
+.ok svg{width:84px;height:84px;margin:0 auto 22px;display:block}
+.ok circle{stroke:var(--gold-light);stroke-width:2;fill:none;stroke-dasharray:1;stroke-dashoffset:1;animation:traco .7s var(--ease) forwards}
+.ok path{stroke:var(--gold);stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:traco .45s var(--ease) .55s forwards}
+@keyframes traco{to{stroke-dashoffset:0}}
+.ok h2{margin-bottom:10px}
+.ok p{color:var(--muted);max-width:34ch;margin:0 auto 8px}
+.cod{font-size:15px;color:var(--faint);margin:14px 0 28px}
+.cod b{color:var(--ink);font-weight:600;letter-spacing:.04em}
+.acoes{display:grid;gap:6px;max-width:320px;margin:0 auto}
+.acoes .btn{text-decoration:none;display:block}
 
 /* Carregando */
-.esqueleto{height:64px;border-radius:var(--r);margin-bottom:8px;background:linear-gradient(90deg,var(--sand),#FAF6EF,var(--sand));background-size:200% 100%;animation:brilho 1.2s infinite}
-@keyframes brilho{to{background-position:-200% 0}}
+.esq{height:62px;background:#fff;position:relative;overflow:hidden}
+.esq:first-child{border-radius:18px 18px 0 0}.esq:last-child{border-radius:0 0 18px 18px}
+.esq::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,0,0,.035),transparent);animation:varre 1.2s infinite}
+@keyframes varre{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
 
-footer{text-align:center;color:var(--muted);font-size:12px;padding:8px 16px 0}
+footer{text-align:center;color:var(--faint);font-size:13px;margin-top:40px}
 
-.entra{animation:entra .35s ease}
-@keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (min-width:640px){.painel{padding:30px 30px 32px}.cats,.dias{margin-left:-30px;margin-right:-30px;padding-left:30px;padding-right:30px}.profs{grid-template-columns:1fr 1fr 1fr}.horas{grid-template-columns:repeat(5,1fr)}}
+/* Transições entre passos */
+.vai{animation:vai .5s var(--ease)}.volta{animation:volta .5s var(--ease)}.entra{animation:entra .6s var(--ease)}
+@keyframes vai{from{opacity:0;transform:translateX(36px)}}
+@keyframes volta{from{opacity:0;transform:translateX(-36px)}}
+@keyframes entra{from{opacity:0;transform:translateY(16px)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (min-width:700px){.hero{padding:84px 24px 76px}.hero h1{font-size:56px}.hero p{font-size:21px}h2{font-size:40px}.horas{grid-template-columns:repeat(5,1fr)}}
 </style>
 </head>
 <body>
 <header class="hero">
-  <img src="logo.png" alt="Guria Dourada Beauty Clinic" width="560" height="369">
-  <h1>Seu horário, <em>do seu jeito</em></h1>
-  <p>Escolha o serviço, a profissional e o melhor horário.</p>
-  <div class="info" id="info"></div>
+  <div class="marca"><img src="logo.png" alt="Guria Dourada Beauty Clinic" width="560" height="369"></div>
+  <h1>Agende seu horário.</h1>
+  <p>Escolha o serviço, a profissional e o melhor momento.</p>
+  <div class="horario" id="horario"></div>
 </header>
 
 <main class="wrap">
-  <div class="painel" id="app" aria-live="polite">
-    <div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>
-  </div>
+  <div id="app" aria-live="polite"><div class="lista" style="margin-top:20px"><div class="esq"></div><div class="esq"></div><div class="esq"></div><div class="esq"></div></div></div>
   <footer>Guria Dourada Beauty Clinic</footer>
 </main>
 
@@ -190,22 +187,22 @@ const toMin = h => { const [a, b] = String(h).split(':').map(Number); return a *
 const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 const brl = v => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const dur = m => m < 60 ? `${m} min` : m % 60 ? `${Math.floor(m / 60)}h${pad(m % 60)}` : `${m / 60}h`;
+const dur = m => m < 60 ? `${m} min` : m % 60 ? `${Math.floor(m / 60)} h ${pad(m % 60)}` : `${m / 60} h`;
 const SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const SEM_LONGO = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const MES_LONGO = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const DIAS_AGENDA = 60;
+const CHECK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
 /* Nome do serviço padronizado: sem emoji, sem caixa alta, "Pacote" vira etiqueta */
 const MINUSC = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'sem', 'para', 'a', 'o', 'em']);
 function limparNome(nome) {
   let s = String(nome).replace(/\p{Extended_Pictographic}|️/gu, '').replace(/\s*\/\s*/g, ' / ')
-    .replace(/\(\s*/g, '(').replace(/\s*\)/g, ')').replace(/\s*-\s*/g, ' · ').replace(/\s+/g, ' ').trim();
+    .replace(/\(\s*/g, '(').replace(/\s*\)/g, ')').replace(/\s*-\s*/g, ', ').replace(/\s+/g, ' ').trim();
   const pacote = /pacote/i.test(s);
-  s = s.replace(/\s*·?\s*pacote\s*$/i, '').replace(/^\s*pacote\s*·?\s*/i, '');
+  s = s.replace(/\s*,?\s*pacote\s*$/i, '').replace(/^\s*pacote\s*,?\s*/i, '');
   s = s.toLowerCase().split(' ').map((w, i) => (i && MINUSC.has(w)) ? w : w.replace(/^(\(?)(\p{L})/u, (m, p, l) => p + l.toUpperCase())).join(' ');
-  return { nome: s.replace(/\s*·\s*$/, ''), pacote };
+  return { nome: s.replace(/\s*,\s*$/, ''), pacote };
 }
 function categoria(nome) {
   const n = nome.toLowerCase();
@@ -217,27 +214,25 @@ function categoria(nome) {
   if (/bronze|drenagem|massag|depila/.test(n)) return 'Corpo e Bronze';
   if (/manicure|pedicure|unha/.test(n)) return 'Unhas';
   if (/sobrancelha|c[ií]lio/.test(n)) return 'Sobrancelha e Cílios';
-  return 'Tratamentos Capilares';
+  return 'Tratamentos';
 }
-const ORDEM_CATS = ['Escovas', 'Cortes', 'Tratamentos Capilares', 'Progressiva e Botox', 'Coloração', 'Mega Hair', 'Corpo e Bronze', 'Unhas', 'Sobrancelha e Cílios'];
+const ORDEM_CATS = ['Escovas', 'Cortes', 'Tratamentos', 'Progressiva e Botox', 'Coloração', 'Mega Hair', 'Corpo e Bronze', 'Unhas', 'Sobrancelha e Cílios'];
 
 /* ============ Estado ============ */
 let sb, cfg = {}, profs = [], servicos = [], ocupados = [];
 const sel = { servs: [], prof: null, data: null, hora: null };
 const form = { nome: '', tel: '', niver: '' };
-let passo = 1, catAtiva = 'Todos', busca = '';
+let dir = 'entra', passo = 1, catAtiva = 'Todos', busca = '';
 const app = $('#app'), barra = $('#barra');
 
 /* ============ Dados ============ */
 async function iniciar() {
-  if (!window.supabase) return falha('Não conseguimos carregar a página. Confira a internet e recarregue.');
+  if (!window.supabase) return falha('A página não carregou por completo. Confira a internet e recarregue.');
   sb = window.supabase.createClient(URL_SB, KEY_SB, { auth: { persistSession: false } });
   const { data, error } = await sb.rpc('agenda_publica');
-  if (error || !data) return falha('Não conseguimos conectar à agenda. Confira a internet e recarregue a página.');
+  if (error || !data) return falha('Sem conexão com a agenda. Confira a internet e recarregue a página.');
   cfg = data.config || {};
   profs = (data.profs || []).sort((a, b) => (a.cadeira || 0) - (b.cadeira || 0));
-  const JOIAS = ['#B8913F', '#4C6FB5', '#3F8C6C', '#C0785A', '#8A66C2', '#3F93A8'], usadas = new Set();
-  profs.forEach((p, i) => { const c = String(p.cor || '').toLowerCase(); p.cor = c && !usadas.has(c) ? c : JOIAS.find(j => !usadas.has(j.toLowerCase())) || JOIAS[i % JOIAS.length]; usadas.add(p.cor.toLowerCase()); });
   ocupados = data.ocupados || [];
   const vistos = new Set();
   servicos = (data.servicos || []).map(s => {
@@ -245,12 +240,11 @@ async function iniciar() {
     return { id: s.id, nome: l.nome, pacote: l.pacote, preco: +s.preco || 0, dur: +s.dur || 60, cat: s.cat || categoria(s.nome) };
   }).filter(s => { const k = s.nome.toLowerCase() + '|' + s.preco; if (vistos.has(k)) return false; vistos.add(k); return true; })
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  $('#info').innerHTML = [cfg.abre && cfg.fecha ? `Das ${cfg.abre.replace(':00', 'h')} às ${cfg.fecha.replace(':00', 'h')}` : '', `${profs.length} profissionais`, 'Confirmação pelo WhatsApp']
-    .filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
-  if (!servicos.length || !profs.length) return falha('Estamos atualizando nossa agenda. Volte em instantes.');
+  if (cfg.abre && cfg.fecha) $('#horario').textContent = `Aberto das ${cfg.abre.replace(':00', 'h')} às ${cfg.fecha.replace(':00', 'h')}`;
+  if (!servicos.length || !profs.length) return falha('A agenda está sendo atualizada. Volte em alguns minutos.');
   render();
 }
-function falha(msg) { app.innerHTML = `<div class="vazio">${esc(msg)}<br><br><button class="btn claro" onclick="location.reload()">Recarregar</button></div>`; barra.classList.remove('on'); }
+function falha(msg) { app.innerHTML = `<div class="vazio">${esc(msg)}<br><br><button class="btn" onclick="location.reload()">Recarregar</button></div>`; barra.classList.remove('on'); }
 
 const durTotal = () => sel.servs.reduce((t, s) => t + s.dur, 0) || 60;
 const precoTotal = () => sel.servs.reduce((t, s) => t + s.preco, 0);
@@ -278,56 +272,56 @@ function horariosDoDia(data) {
 /* ============ Telas ============ */
 const NOMES = ['Serviços', 'Profissional', 'Data e horário', 'Seus dados'];
 function cabecalho(titulo, sub) {
-  return `<div class="topo">${passo > 1 ? '<button class="voltar" id="voltar" aria-label="Voltar">‹</button>' : ''}
-    <div class="passo">Passo ${passo} de 4 · ${NOMES[passo - 1]}</div></div>
-    <div class="trilho"><i style="width:${passo * 25}%"></i></div><h2>${titulo}</h2><p class="sub">${sub}</p>`;
+  return `<div class="topo">${passo > 1 ? `<button class="voltar" id="voltar"><svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2 2 10l8 8"/></svg>${NOMES[passo - 2]}</button>` : '<span></span>'}
+    <span class="passo">Passo ${passo} de 4</span></div>
+    <div class="trilho">${NOMES.map((_, i) => `<i class="${i < passo ? 'on' : ''}"></i>`).join('')}</div>
+    <h2>${titulo}</h2><p class="sub">${sub}</p>`;
 }
 function render() {
   document.body.classList.toggle('compacto', passo > 1);
   ({ 1: telaServicos, 2: telaProf, 3: telaData, 4: telaDados })[passo]();
-  app.classList.remove('entra'); void app.offsetWidth; app.classList.add('entra');
+  app.classList.remove('entra', 'vai', 'volta'); void app.offsetWidth; app.classList.add(dir);
   const v = $('#voltar'); if (v) v.onclick = () => ir(passo - 1);
   atualizarBarra();
 }
-function ir(p) { passo = p; render(); window.scrollTo({ top: Math.max(0, app.offsetTop - 20), behavior: 'smooth' }); }
+function ir(p) { dir = p > passo ? 'vai' : 'volta'; passo = p; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 function telaServicos() {
   const cats = ORDEM_CATS.filter(c => servicos.some(s => s.cat === c)).concat([...new Set(servicos.map(s => s.cat))].filter(c => !ORDEM_CATS.includes(c)));
-  const q = busca.trim().toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
-  const lista = servicos.filter(s => (catAtiva === 'Todos' || s.cat === catAtiva) && (!q || s.nome.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').includes(q)));
-  const card = s => { const on = sel.servs.some(x => x.id === s.id);
-    return `<button class="serv ${on ? 'on' : ''}" data-s="${s.id}" aria-pressed="${on}"><div class="txt"><b>${esc(s.nome)}</b>
-      <small>${s.preco ? `<span class="preco">${brl(s.preco)}</span>` : '<span class="preco">Sob avaliação</span>'}<span>· ${dur(s.dur)}</span>${s.pacote ? '<span class="tag">Pacote</span>' : ''}</small></div>
-      <span class="mais">${on ? '✓' : '+'}</span></button>`; };
+  const norm = t => t.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+  const q = norm(busca.trim());
+  const lista = servicos.filter(s => (catAtiva === 'Todos' || s.cat === catAtiva) && (!q || norm(s.nome).includes(q)));
+  const item = s => { const on = sel.servs.some(x => x.id === s.id);
+    return `<button class="item ${on ? 'on' : ''}" data-s="${s.id}" aria-pressed="${on}"><span class="txt"><b>${esc(s.nome)}</b>
+      <span class="meta"><span class="preco">${s.preco ? brl(s.preco) : 'Sob avaliação'}</span><span>${dur(s.dur)}</span>${s.pacote ? '<span class="pacote">Pacote</span>' : ''}</span></span>${CHECK}</button>`; };
   let corpo;
-  if (!lista.length) corpo = '<div class="vazio">Nenhum serviço encontrado.</div>';
-  else if (catAtiva === 'Todos' && !q) corpo = cats.map(c => `<div class="grupo">${esc(c)}</div>` + lista.filter(s => s.cat === c).map(card).join('')).join('');
-  else corpo = lista.map(card).join('');
-  app.innerHTML = cabecalho('O que vamos fazer hoje?', 'Escolha um ou mais serviços.') +
-    `<div class="busca"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-     <input id="busca" type="search" placeholder="Buscar serviço" value="${esc(busca)}" autocomplete="off"></div>
-     <div class="cats">${['Todos', ...cats].map(c => `<button class="cat ${c === catAtiva ? 'on' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-     <div id="lista">${corpo}</div>`;
+  if (!lista.length) corpo = '<div class="vazio">Nenhum serviço com esse nome. Tente outra palavra.</div>';
+  else if (catAtiva === 'Todos' && !q) corpo = cats.map(c => `<h3 class="titulo-grupo">${esc(c)}</h3><div class="lista">${lista.filter(s => s.cat === c).map(item).join('')}</div>`).join('');
+  else corpo = `<div class="lista" style="margin-top:14px">${lista.map(item).join('')}</div>`;
+  app.innerHTML = cabecalho('Escolha os serviços.', 'Pode escolher mais de um.') +
+    `<div class="busca"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+     <input id="busca" type="search" placeholder="Buscar" value="${esc(busca)}" autocomplete="off"></div>
+     <div class="filtros">${['Todos', ...cats].map(c => `<button class="filtro ${c === catAtiva ? 'on' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+     ${corpo}`;
   const inp = $('#busca');
   inp.oninput = () => { busca = inp.value; const pos = inp.selectionStart; telaServicos(); atualizarBarra(); const n = $('#busca'); n.focus(); n.setSelectionRange(pos, pos); };
-  app.querySelectorAll('.cat').forEach(b => b.onclick = () => { catAtiva = b.dataset.c; telaServicos(); atualizarBarra(); app.querySelector('.cat.on')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); });
-  app.querySelectorAll('.serv').forEach(b => b.onclick = () => {
+  app.querySelectorAll('.filtro').forEach(b => b.onclick = () => { catAtiva = b.dataset.c; telaServicos(); atualizarBarra(); app.querySelector('.filtro.on')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); });
+  app.querySelectorAll('.item').forEach(b => b.onclick = () => {
     const s = servicos.find(x => x.id === b.dataset.s), i = sel.servs.findIndex(x => x.id === s.id);
     if (i >= 0) sel.servs.splice(i, 1); else sel.servs.push(s);
     sel.data = sel.hora = null;
-    const on = i < 0; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.querySelector('.mais').textContent = on ? '✓' : '+';
+    b.classList.toggle('on', i < 0); b.setAttribute('aria-pressed', i < 0);
     atualizarBarra();
   });
 }
 
 function telaProf() {
-  const ini = n => esc(String(n).trim().charAt(0).toUpperCase());
-  app.innerHTML = cabecalho('Com quem você prefere?', 'Escolha sua profissional ou deixe a gente encaixar no melhor horário.') +
-    `<div class="profs"><button class="prof qualquer ${!sel.prof ? 'on' : ''}" data-p=""><span class="av">✦</span><span><b>Primeira disponível</b><small>Mais opções de horário</small></span></button>
-    ${profs.map(p => `<button class="prof ${sel.prof?.id === p.id ? 'on' : ''}" data-p="${p.id}"><span class="av" style="background:${esc(p.cor || '#B8913F')}">${ini(p.nome)}</span><b>${esc(p.nome)}</b><small>Profissional</small></button>`).join('')}</div>`;
-  app.querySelectorAll('.prof').forEach(b => b.onclick = () => {
+  app.innerHTML = cabecalho('Com quem você prefere?', 'Ou deixe com a gente e veja mais horários.') +
+    `<div class="lista"><button class="item ${!sel.prof ? 'on' : ''}" data-p=""><span class="txt"><b>Primeira disponível</b><span class="desc">Mais opções de horário</span></span>${CHECK}</button>
+    ${profs.map(p => `<button class="item ${sel.prof?.id === p.id ? 'on' : ''}" data-p="${p.id}"><span class="txt"><b>${esc(p.nome)}</b></span>${CHECK}</button>`).join('')}</div>`;
+  app.querySelectorAll('.item').forEach(b => b.onclick = () => {
     sel.prof = b.dataset.p ? profs.find(p => p.id === b.dataset.p) : null; sel.data = sel.hora = null;
-    app.querySelectorAll('.prof').forEach(x => x.classList.toggle('on', x === b));
+    app.querySelectorAll('.item').forEach(x => x.classList.toggle('on', x === b));
     atualizarBarra();
   });
 }
@@ -340,31 +334,33 @@ function telaData() {
   const grupos = [['Manhã', m => m < 720], ['Tarde', m => m >= 720 && m < 1080], ['Noite', m => m >= 1080]];
   const blocos = grupos.map(([nome, f]) => { const l = hs.filter(f); return l.length ? `<div class="periodo">${nome}</div><div class="horas">${l.map(m => `<button class="hora ${toHM(m) === sel.hora ? 'on' : ''}" data-h="${toHM(m)}">${toHM(m)}</button>`).join('')}</div>` : ''; }).join('');
   app.innerHTML = cabecalho('Quando fica melhor?', `${dur(durTotal())} de atendimento${sel.prof ? ' com ' + esc(sel.prof.nome) : ''}.`) +
-    (sel.data ? `<div class="mes" id="mes">${MES_LONGO[dt.getMonth()]} ${dt.getFullYear()}</div>
-    <div class="dias" id="dias">${dias.map(x => { const d = new Date(x.d + 'T12:00');
-      return `<button class="dia ${x.d === sel.data ? 'on' : ''}" data-d="${x.d}" ${x.n ? '' : 'disabled'}><span>${x.d === hoje() ? 'Hoje' : SEM[d.getDay()]}</span><b>${d.getDate()}</b><small>${MES[d.getMonth()]}</small></button>`; }).join('')}</div>
+    (sel.data ? `<div class="mes">${MES_LONGO[dt.getMonth()]} de ${dt.getFullYear()}</div>
+    <div class="dias">${dias.map(x => { const d = new Date(x.d + 'T12:00');
+      return `<button class="dia ${x.d === sel.data ? 'on' : ''}" data-d="${x.d}" ${x.n ? '' : 'disabled'} aria-label="${SEM_LONGO[d.getDay()]}, ${d.getDate()}"><span>${x.d === hoje() ? 'Hoje' : SEM[d.getDay()]}</span><b>${d.getDate()}</b></button>`; }).join('')}</div>
     ${blocos || '<div class="vazio">Sem horários neste dia.</div>'}`
-    : '<div class="vazio">Não há horários livres nos próximos dias para essa combinação. Tente outra profissional ou menos serviços.</div>');
+    : '<div class="vazio">Sem horários livres nos próximos 60 dias para essa escolha. Tente outra profissional ou menos serviços.</div>');
   const on = app.querySelector('.dia.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
-  app.querySelectorAll('.dia').forEach(b => b.onclick = () => { sel.data = b.dataset.d; sel.hora = null; const y = window.scrollY; telaData(); atualizarBarra(); window.scrollTo(0, y); });
+  app.querySelectorAll('.dia').forEach(b => b.onclick = () => { sel.data = b.dataset.d; sel.hora = null; const y = window.scrollY, x = app.querySelector('.dias').scrollLeft; telaData(); app.querySelector('.dias').scrollLeft = x; atualizarBarra(); window.scrollTo(0, y); });
   app.querySelectorAll('.hora').forEach(b => b.onclick = () => { sel.hora = b.dataset.h; app.querySelectorAll('.hora').forEach(x => x.classList.toggle('on', x === b)); atualizarBarra(); });
 }
 
-function quando() { const d = new Date(sel.data + 'T12:00'); return `${SEM_LONGO[d.getDay()]}, ${d.getDate()} de ${MES_LONGO[d.getMonth()].toLowerCase()} · ${sel.hora}`; }
+function quando() { const d = new Date(sel.data + 'T12:00'); return `${SEM_LONGO[d.getDay()]}, ${d.getDate()} de ${MES_LONGO[d.getMonth()].toLowerCase()}, às ${sel.hora}`; }
 function totalTxt() { return precoTotal() ? brl(precoTotal()) + (temAvaliacao() ? ' + avaliação' : '') : 'Sob avaliação'; }
 function mascaraTel(v) { const d = v.replace(/\D/g, '').slice(0, 11); if (d.length <= 2) return d.length ? `(${d}` : ''; if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`; if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`; return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; }
 
 function telaDados() {
-  app.innerHTML = cabecalho('Quase lá', 'Confira o resumo e deixe seu contato para confirmarmos.') +
-    `<div class="resumo">${sel.servs.map(s => `<div class="linha"><span>${esc(s.nome)}</span><span>${s.preco ? brl(s.preco) : 'Avaliação'}</span></div>`).join('')}
+  app.innerHTML = cabecalho('Confira e finalize.', 'Confirmamos pelo WhatsApp.') +
+    `<div class="lista">${sel.servs.map(s => `<div class="linha"><span>${esc(s.nome)}</span><span>${s.preco ? brl(s.preco) : 'Avaliação'}</span></div>`).join('')}
       <div class="linha"><span>Profissional</span><span>${esc(sel.prof?.nome || 'Primeira disponível')}</span></div>
       <div class="linha"><span>Quando</span><span>${quando()}</span></div>
       <div class="linha"><span>Duração</span><span>${dur(durTotal())}</span></div>
       <div class="linha total"><span>Total</span><span>${totalTxt()}</span></div></div>
-    <div class="campo"><label for="fNome">Nome completo</label><input id="fNome" value="${esc(form.nome)}" placeholder="Maria da Silva" autocomplete="name"></div>
-    <div class="campo"><label for="fTel">WhatsApp</label><input id="fTel" value="${esc(form.tel)}" placeholder="(51) 99999-9999" type="tel" inputmode="numeric" autocomplete="tel-national"></div>
-    <div class="campo"><label for="fNiver">Aniversário <i>(opcional, tem mimo no seu dia)</i></label><input id="fNiver" value="${esc(form.niver)}" type="date"></div>
-    <p class="nota">Seu pedido chega para nossa equipe e confirmamos pelo WhatsApp. O horário fica reservado após a confirmação.</p>
+    <div class="form">
+      <div class="campo"><label for="fNome">Nome completo</label><input id="fNome" value="${esc(form.nome)}" autocomplete="name"></div>
+      <div class="campo"><label for="fTel">WhatsApp</label><input id="fTel" value="${esc(form.tel)}" placeholder="(51) 99999-9999" type="tel" inputmode="numeric" autocomplete="tel-national"></div>
+      <div class="campo"><label for="fNiver">Aniversário, opcional. Tem presente no seu mês.</label><input id="fNiver" value="${esc(form.niver)}" type="date"></div>
+    </div>
+    <p class="nota">O horário fica reservado depois que confirmamos pelo WhatsApp.</p>
     <div class="erro" id="err"></div>`;
   const n = $('#fNome'), t = $('#fTel'), b = $('#fNiver');
   n.oninput = () => { form.nome = n.value; atualizarBarra(); };
@@ -372,7 +368,7 @@ function telaDados() {
   b.oninput = () => { form.niver = b.value; };
 }
 
-/* ============ Barra fixa ============ */
+/* ============ Barra inferior ============ */
 function podeAvancar() {
   if (passo === 1) return sel.servs.length > 0;
   if (passo === 2) return true;
@@ -382,9 +378,9 @@ function podeAvancar() {
 function atualizarBarra() {
   const n = sel.servs.length;
   barra.classList.toggle('on', n > 0);
-  $('#barraRes').innerHTML = n ? `<b>${totalTxt()}</b>${n} serviço${n > 1 ? 's' : ''} · ${dur(durTotal())}${passo >= 3 && sel.hora ? ' · ' + sel.data.slice(8) + '/' + sel.data.slice(5, 7) + ' ' + sel.hora : ''}` : '';
+  $('#barraRes').innerHTML = n ? `<b>${totalTxt()}</b>${n} serviço${n > 1 ? 's' : ''}, ${dur(durTotal())}${passo === 3 && sel.hora ? `, ${sel.data.slice(8)}/${sel.data.slice(5, 7)} às ${sel.hora}` : ''}` : '';
   const btn = $('#barraBtn');
-  btn.textContent = passo === 4 ? 'Enviar pedido' : 'Continuar';
+  btn.textContent = passo === 4 ? 'Pedir horário' : 'Continuar';
   btn.disabled = !podeAvancar();
 }
 $('#barraBtn').onclick = () => { if (!podeAvancar()) return; if (passo < 4) ir(passo + 1); else enviar(); };
@@ -398,7 +394,7 @@ async function enviar() {
     p_prof: sel.prof?.id || null, p_servs: sel.servs.map(s => s.id)
   });
   if (error) {
-    err.textContent = error.message && !/fetch|network/i.test(error.message) ? error.message : 'Não conseguimos enviar. Confira a internet e tente de novo.';
+    err.textContent = error.message && !/fetch|network/i.test(error.message) ? error.message : 'Sem conexão. Confira a internet e toque em Pedir horário de novo.';
     if (/preenchido/.test(error.message || '')) { const r = await sb.rpc('agenda_publica'); if (r.data) ocupados = r.data.ocupados || []; }
     atualizarBarra(); return;
   }
@@ -406,18 +402,20 @@ async function enviar() {
 }
 function linkAgenda() {
   const ini = sel.data.replace(/-/g, '') + 'T' + sel.hora.replace(':', '') + '00';
-  const f = toMin(sel.hora) + durTotal(), fim = sel.data.replace(/-/g, '') + 'T' + toHM(f).replace(':', '') + '00';
+  const fim = sel.data.replace(/-/g, '') + 'T' + toHM(toMin(sel.hora) + durTotal()).replace(':', '') + '00';
   const p = new URLSearchParams({ action: 'TEMPLATE', text: 'Guria Dourada Beauty Clinic', dates: `${ini}/${fim}`, ctz: 'America/Sao_Paulo',
     details: 'Pedido de horário: ' + sel.servs.map(s => s.nome).join(', ') + '. Aguardando confirmação pelo WhatsApp.' });
   return 'https://calendar.google.com/calendar/render?' + p;
 }
 function sucesso(agId) {
   barra.classList.remove('on');
-  app.innerHTML = `<div class="ok entra"><div class="selo">✓</div><h2>Pedido enviado!</h2>
-    <p>Recebemos seu pedido para <b>${quando()}</b>.<br>Vamos confirmar pelo WhatsApp <b>${esc(form.tel)}</b> em breve.</p>
-    <div class="cod">GD-${esc(String(agId || '').toUpperCase().slice(0, 6))}</div>
+  app.classList.remove('vai', 'volta'); void app.offsetWidth; app.classList.add('entra');
+  app.innerHTML = `<div class="ok"><svg viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="40" pathLength="1"/><path d="M26 43l11 11 21-23" pathLength="1"/></svg>
+    <h2>Pedido enviado.</h2>
+    <p>${quando()}.</p><p>Vamos confirmar pelo WhatsApp ${esc(form.tel)}.</p>
+    <div class="cod">Código do pedido <b>GD-${esc(String(agId || '').toUpperCase().slice(0, 6))}</b></div>
     <div class="acoes"><a class="btn" href="${linkAgenda()}" target="_blank" rel="noopener">Salvar na minha agenda</a>
-    <button class="btn claro" onclick="location.reload()">Fazer outro pedido</button></div></div>`;
+    <button class="btn link" onclick="location.reload()">Fazer outro pedido</button></div></div>`;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
