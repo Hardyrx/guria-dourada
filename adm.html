@@ -143,7 +143,8 @@ details table{margin-top:10px}
 .campos label.check input,label.check input{width:18px!important;min-width:18px;flex:0 0 18px;margin:0}
 .campos label.check{font-size:14.5px;line-height:1.35}
 .acoes{display:flex;gap:8px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap}
-.acoes .esq{margin-right:auto}
+.acoes .esq{margin-right:0}
+.acoes .esq:not(:has(~ .esq)){margin-right:auto}
 .erro{color:var(--alerta);font-size:14px;margin-top:10px;min-height:1em}
 
 .item{display:grid;grid-template-columns:2fr 100px 60px 1.3fr auto;gap:10px;align-items:end;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -1140,7 +1141,7 @@ function telaCadastros() {
   const abas = { equipe: 'Equipe', servicos: 'Serviços', produtos: 'Produtos', salao: 'Salão e taxas' };
   let corpo = '';
   if (abaCad === 'equipe') corpo = tabela(['Cadeira', 'Nome', 'Comissão serviço', 'Comissão produto', 'Situação', 'Acesso'],
-    [...db.profs].sort((a, b) => a.cadeira - b.cadeira).map(p => [p.id, [p.cadeira, `${p.foto ? `<img src="${esc(p.foto)}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">` : `<span class="bola" style="background:${p.cor};color:${p.cor}"></span>`}${esc(p.nome)}`, p.comServ + '%', p.comProd + '%', p.ativo ? 'Ativa' : 'Inativa',
+    [...db.profs].filter(p => !p.excluida).sort((a, b) => a.cadeira - b.cadeira).map(p => [p.id, [p.cadeira, `${p.foto ? `<img src="${esc(p.foto)}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">` : `<span class="bola" style="background:${p.cor};color:${p.cor}"></span>`}${esc(p.nome)}`, p.comServ + '%', p.comProd + '%', p.ativo ? 'Ativa' : 'Inativa',
       `<button class="btn peq" data-acesso="${p.id}">${textoAcesso(p.id)}</button>`]]), 'Nova profissional');
   if (abaCad === 'servicos') corpo = tabela(['Serviço', 'Preço', 'Duração', 'Comissão'],
     db.servicos.map(s => [s.id, [esc(s.nome), brl(s.preco), s.dur + ' min', s.com === '' || s.com == null ? 'Padrão da profissional' : s.com + '% para todas']]), 'Novo serviço');
@@ -1160,6 +1161,9 @@ function telaCadastros() {
   main.querySelectorAll('[data-acesso]').forEach(b => b.onclick = () => abrirAcesso(b.dataset.acesso));
   if (abaCad === 'equipe' && !acessos) carregarAcessos();
 }
+
+/* Profissional com atendimento ou venda não pode ser apagada: o histórico depende dela */
+const temHistorico = id => db.ags.some(a => a.prof === id) || db.vendas.some(v => (v.coms || []).some(c => c.prof === id) || (v.itens || []).some(i => i.p1 === id || i.p2 === id));
 
 /* ============ Acesso das colaboradoras ============ */
 let acessos = null;
@@ -1287,7 +1291,17 @@ function editarCad(id) {
       { k: 'comServ', rot: 'Comissão em serviços (%)', tipo: 'number', step: '0.5' }, { k: 'comProd', rot: 'Comissão em produtos (%)', tipo: 'number', step: '0.5' },
       { k: 'cor', rot: 'Cor na agenda', tipo: 'color' }, { k: 'ativo', rot: 'Ativa (aparece na agenda)', tipo: 'check' }
     ], p, v => { if (!v.nome) return 'Digite o nome.'; if (v.comServ === '' || v.comProd === '') return 'Preencha as comissões.'; gravar('profs', v); },
-    id ? [{ rot: 'Desativar em vez de excluir', cls: 'perigo', fn: f => { p.ativo = false; salvar(); f.remove(); render(); toast('Profissional desativada. O histórico dela foi mantido.'); } }] : null);
+    !id ? null : [
+      ...(p.ativo ? [{ rot: 'Desativar', cls: 'perigo', fn: f => { if (!confirm(`Desativar ${p.nome}? Ela sai da agenda e do site. Para voltar, é só marcar "Ativa" de novo.`)) return; p.ativo = false; salvar(); f.remove(); render(); toast('Profissional desativada'); } }] : []),
+      { rot: 'Excluir', cls: 'perigo', fn: async f => {
+        const hist = temHistorico(id);
+        if (!confirm(hist ? `Excluir ${p.nome}? Ela sai da lista, da agenda e do site, e perde o login. As vendas e comissões antigas continuam com o nome dela nos relatórios.`
+                          : `Excluir ${p.nome} de vez? Ela não tem atendimentos nem vendas, então nada do histórico se perde.`)) return;
+        if (acessoDe(id)) { try { await chamarAcesso({ acao: 'remover', prof_id: id }); } catch (er) { toast('Não foi possível remover o login dela: ' + er.message); return; } }
+        if (hist) Object.assign(p, { ativo: false, excluida: true }); else db.profs = db.profs.filter(x => x.id !== id);
+        salvar(); f.remove(); acessos = null; render(); toast('Profissional excluída');
+      } }
+    ]);
   }
   if (abaCad === 'servicos') {
     const s = id ? serv(id) : { nome: '', preco: '', dur: 60, com: '' };
