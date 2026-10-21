@@ -73,7 +73,12 @@ h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:28px 4px 10px}
 .at .h small{display:block;font-size:13px;font-weight:400;color:var(--faint)}
 .at b{display:block;font-size:16px;font-weight:600}
 .at .meta{font-size:14px;color:var(--muted);margin-top:2px}
-.st{display:inline-block;font-size:12.5px;font-weight:600;border-radius:99px;padding:2px 9px;margin-top:8px}
+.st{display:inline-block;font-size:12.5px;font-weight:600;border-radius:99px;padding:2px 9px;white-space:nowrap;flex-shrink:0}
+.at .linha-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.at .meta.valor{color:var(--ink);font-weight:500}
+.at>.acoes{grid-column:1/-1;margin-top:2px}
+.at>.acoes:empty{display:none}
+.at>.acoes .btn{flex:1 1 0;justify-content:center;min-width:0;padding:10px 8px}
 .st.pendente{background:var(--gold-soft);color:#7A5A1C}.st.agendado{background:var(--ok-soft);color:var(--ok)}.st.fechado{background:var(--fill);color:var(--muted)}
 .acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .btn{background:var(--black);color:#fff;font-weight:500;border-radius:99px;padding:10px 18px;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:opacity .2s var(--ease),transform .1s}
@@ -256,16 +261,17 @@ function cartao(a, comData) {
     : `Olá ${ela}! Aqui é a ${eu}, da Guria Dourada.`;
   const z = linkZap(a.tel, msgConf), zLivre = linkZap(a.tel, msgLivre);
   const temTel = !!zLivre;
-  return `<div class="at"><div class="h">${esc(a.hora)}<small>até ${fim}</small></div><div>
-    <b>${esc(a.cliente || 'Cliente')}</b>
-    <div class="meta">${esc(limparNome(a.servico))} · ${a.preco ? brl(a.preco) : 'Sob avaliação'}${comData ? ` · ${SEM[dt.getDay()]} ${dataBR(a.data).slice(0, 5)}` : ''}</div>
-    <div class="meta">${temTel ? `WhatsApp ${esc(mascaraTel(String(a.tel).replace(/^\+?55(?=\d{10,11}$)/, '')))}` : 'Cliente sem WhatsApp cadastrado. Peça o número ao salão.'}</div>
-    <span class="st ${esc(a.status)}">${ST[a.status] || esc(a.status)}</span>
+  const PAG = { dinheiro: 'em dinheiro', pix: 'no Pix', debito: 'no débito', credito: 'no crédito' };
+  const valor = a.pag ? `${brl(a.total ?? a.preco)} · Pago ${PAG[a.pag] || ''}` : `${a.preco ? brl(a.preco) : 'Sob avaliação'} · ${a.status === 'fechado' ? 'Pago' : 'A pagar'}`;
+  return `<div class="at"><div class="h">${esc(a.hora)}<small>até ${fim}</small></div><div class="corpo">
+    <div class="linha-topo"><b>${esc(a.cliente || 'Cliente')}</b><span class="st ${esc(a.status)}">${ST[a.status] || esc(a.status)}</span></div>
+    <div class="meta">${esc(limparNome(a.servico))}${comData ? ` · ${SEM[dt.getDay()]} ${dataBR(a.data).slice(0, 5)}` : ''}</div>
+    <div class="meta valor">${esc(valor)}</div></div>
     <div class="acoes">${a.status === 'pendente' ? `<button class="btn" data-conf="${esc(a.id)}" data-zap="${esc(z)}">Confirmar</button><button class="btn perigo" data-rec="${esc(a.id)}">Recusar</button>` : ''}
       ${temTel ? `<a class="btn zap" href="${esc(zLivre)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-      ${futuro && (a.status === 'pendente' || a.status === 'agendado') ? `<button class="btn claro" data-rem="${esc(a.id)}">Remarcar</button>` : ''}
+      ${futuro && a.status === 'agendado' ? `<button class="btn claro" data-rem="${esc(a.id)}">Remarcar</button>` : ''}
       ${futuro && a.status === 'agendado' ? `<button class="btn perigo" data-des="${esc(a.id)}">Desmarcar</button>` : ''}</div>
-  </div></div>`;
+  </div>`;
 }
 function quandoTexto(data, hora) { const d = new Date(data + 'T12:00'); return `${SEM_LONGO[d.getDay()].toLowerCase()}, ${dataBR(data)} às ${hora}`; }
 function ligarCartoes(el) {

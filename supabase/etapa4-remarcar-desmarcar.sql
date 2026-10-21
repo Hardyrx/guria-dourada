@@ -3,7 +3,8 @@
 
 begin;
 
--- 1) Painel da colaboradora passa a receber intervalo da agenda e dias fechados (para mostrar horários livres)
+-- 1) Painel da colaboradora passa a receber intervalo da agenda, dias fechados (para mostrar horários livres)
+--    e, nos atendimentos já fechados no caixa, a forma de pagamento
 create or replace function public.meu_painel() returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare
@@ -29,11 +30,14 @@ begin
     'agenda', coalesce((select jsonb_agg(jsonb_build_object(
                  'id', a.id, 'data', a.dados->'data', 'hora', a.dados->'hora', 'dur', a.dados->'dur',
                  'status', a.dados->'status', 'servico', s.dados->'nome', 'preco', s.dados->'preco',
-                 'cliente', c.dados->'nome', 'tel', c.dados->'tel')
+                 'cliente', c.dados->'nome', 'tel', c.dados->'tel',
+                 'pag', v.dados->'pag', 'total', v.dados->'total')
                  order by a.dados->>'data', a.dados->>'hora')
                from public.registros a
                left join public.registros s on s.tipo = 'servicos' and s.id = a.dados->>'serv'
                left join public.registros c on c.tipo = 'clientes' and c.id = a.dados->>'cli'
+               left join lateral (select x.dados from public.registros x
+                                  where x.tipo = 'vendas' and x.dados->>'agId' = a.id limit 1) v on true
                where a.tipo = 'ags' and a.dados->>'prof' = v_prof
                  and a.dados->>'data' between to_char(v_hoje - 7, 'YYYY-MM-DD') and to_char(v_hoje + 60, 'YYYY-MM-DD')
                  and coalesce(a.dados->>'status', '') not in ('cancelado', 'recusado')), '[]'),
