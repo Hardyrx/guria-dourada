@@ -214,7 +214,10 @@ const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const hoje = () => iso(new Date());
+/* Datas e horas sempre no horário de Brasília, seja qual for o fuso do celular da cliente */
+const FUSO = { timeZone: 'America/Sao_Paulo' };
+const hoje = () => new Intl.DateTimeFormat('en-CA', { ...FUSO, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const minutosAgora = () => { const [h, m] = new Intl.DateTimeFormat('pt-BR', { ...FUSO, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()).split(':').map(Number); return h * 60 + m; };
 const addDias = (s, n) => { const d = new Date(s + 'T12:00'); d.setDate(d.getDate() + n); return iso(d); };
 const toMin = h => { const [a, b] = String(h).split(':').map(Number); return a * 60 + b; };
 const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
@@ -287,7 +290,7 @@ const fechado = data => (cfg.fechado || []).includes(new Date(data + 'T12:00').g
 function livres(data, profId, d) {
   if (!cfg.abre || !cfg.fecha || fechado(data)) return [];
   const ini = toMin(cfg.abre), fim = toMin(cfg.fecha), p = +(cfg.intervalo || 30);
-  const agora = new Date(), minAgora = data === hoje() ? agora.getHours() * 60 + agora.getMinutes() + 30 : -1;
+  const minAgora = data === hoje() ? minutosAgora() + 30 : -1;
   const oc = ocupados.filter(a => a.data === data && a.prof === profId);
   const out = [];
   for (let m = ini; m + d <= fim; m += p) {

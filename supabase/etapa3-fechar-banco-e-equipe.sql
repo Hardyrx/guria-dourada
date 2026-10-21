@@ -35,7 +35,8 @@ create or replace function public.agenda_publica() returns jsonb
 language sql stable security definer set search_path = '' as $$
   select jsonb_build_object(
     'config', (select jsonb_build_object('nome', dados->'nome', 'slogan', dados->'slogan',
-                 'abre', dados->'abre', 'fecha', dados->'fecha', 'intervalo', dados->'intervalo')
+                 'abre', dados->'abre', 'fecha', dados->'fecha', 'intervalo', dados->'intervalo',
+                 'fechado', coalesce(dados->'fechado', '[]'::jsonb))
                from public.registros where tipo = 'config' limit 1),
     'profs', coalesce((select jsonb_agg(jsonb_build_object('id', id, 'nome', dados->'nome',
                  'cor', dados->'cor', 'cadeira', dados->'cadeira', 'foto', dados->'foto'))
@@ -143,9 +144,13 @@ begin
   if coalesce(p_tel, '') <> '' and length(regexp_replace(p_tel, '\D', '', 'g')) not between 10 and 13 then
     raise exception 'WhatsApp inválido.';
   end if;
+  -- null = não mexe; '' = apaga; texto = grava
   update public.registros
-  set dados = dados || jsonb_strip_nulls(jsonb_build_object('tel', nullif(p_tel, ''), 'foto', nullif(p_foto, ''))),
+  set dados = case when p_foto is null then x else case when p_foto = '' then x - 'foto' else x || jsonb_build_object('foto', p_foto) end end,
       atualizado = now()
+  from (select case when p_tel is null then dados when p_tel = '' then dados - 'tel'
+                    else dados || jsonb_build_object('tel', p_tel) end as x
+        from public.registros where tipo = 'profs' and id = v_prof) atual
   where tipo = 'profs' and id = v_prof;
 end;
 $$;

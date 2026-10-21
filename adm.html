@@ -354,6 +354,8 @@ function aplicarRemoto(p) {
     const { tipo, id, dados } = p.new || {}; if (!tipo) return;
     const k = tipo + ':' + id, v = est(dados);
     if (snap[k] === v) return;
+    if (COLS.includes(tipo)) { const loc = db[tipo].find(r => r.id === id); if (loc && k in snap && est(loc) !== snap[k]) return; }
+    if (tipo === 'config' && db.config && 'config:config' in snap && est(db.config) !== snap['config:config']) return;
     snap[k] = v;
     if (tipo === 'config') db.config = dados;
     else if (tipo === 'meta') Object.assign(db, dados);
@@ -457,13 +459,19 @@ async function iniciar() {
 /* Só admin usa o painel. Colaboradora é levada para a área da equipe. */
 async function entrarSeAdmin() {
   const { data: adm, error } = await sb.rpc('eh_admin');
-  if (!error && adm === false) {
+  const { data: ses } = await sb.auth.getSession(), uidAtual = ses.session?.user?.id || '';
+  let ultimoAdmin = ''; try { ultimoAdmin = localStorage.getItem('ps_admin') || ''; } catch (e) {}
+  if (adm === true) { try { localStorage.setItem('ps_admin', uidAtual); } catch (e) {} entrar(); return; }
+  if (error && uidAtual && uidAtual === ultimoAdmin) { entrar(); return; }
+  if (error) {
+    entrada('<p>Não consegui confirmar seu acesso. Confira a internet e tente de novo.</p><div class="opcoes"><button class="btn pri" id="tentAdm">Tentar de novo</button></div>').querySelector('#tentAdm').onclick = entrarSeAdmin;
+    return;
+  }
+  {
     const e = entrada(`<p style="font-size:15px">Este login é de colaboradora. A agenda dela fica na área da equipe.</p>
       <div class="opcoes"><a class="btn pri" href="/equipe">Abrir área da equipe</a><button class="btn" id="sairCol">Sair</button></div>`);
     e.querySelector('#sairCol').onclick = async () => { await sb.auth.signOut(); telaLogin(); };
-    return;
   }
-  entrar();
 }
 function migrar() {
   const c = db.config;
@@ -731,7 +739,7 @@ function formulario(titulo, campos, valores, aoSalvar, extra) {
 /* ============ Agenda ============ */
 function conflito(a) {
   const ini = toMin(a.hora), fim = ini + (+a.dur);
-  return db.ags.find(o => o.id !== a.id && o.data === a.data && o.prof === a.prof && o.status !== 'cancelado' &&
+  return db.ags.find(o => o.id !== a.id && o.data === a.data && o.prof === a.prof && o.status !== 'cancelado' && o.status !== 'recusado' &&
     ini < toMin(o.hora) + (+o.dur) && toMin(o.hora) < fim);
 }
 
@@ -785,9 +793,9 @@ function telaAgenda() {
   const { abre, fecha, intervalo } = db.config;
   const ini = toMin(abre), fim = toMin(fecha), passo = +intervalo;
   const nSlots = Math.ceil((fim - ini) / passo);
-  const ags = db.ags.filter(a => a.data === diaAgenda && a.status !== 'cancelado');
+  const ags = db.ags.filter(a => a.data === diaAgenda && a.status !== 'cancelado' && a.status !== 'recusado');
   const nomeDia = new Date(diaAgenda + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const chips = `<div class="chips">${todas.map(p => { const n = db.ags.filter(a => a.data === diaAgenda && a.prof === p.id && a.status !== 'cancelado').length;
+  const chips = `<div class="chips">${todas.map(p => { const n = db.ags.filter(a => a.data === diaAgenda && a.prof === p.id && a.status !== 'cancelado' && a.status !== 'recusado').length;
     return `<button data-chip="${p.id}" class="${p.id === profCel ? 'on' : ''}"><span class="bola" style="background:${p.cor};color:${p.cor}"></span>${esc(p.nome)}<small>${n}</small></button>`; }).join('')}</div>`;
   let g = `<div class="agenda" style="grid-template-columns:${ehCelular() ? '56px' : '62px'} repeat(${profs.length}, minmax(${ehCelular() ? '0' : '150px'},1fr));grid-template-rows:auto repeat(${nSlots}, 42px)">`;
   g += `<div class="cab" style="grid-column:1;grid-row:1"></div>`;

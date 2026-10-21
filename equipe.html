@@ -135,7 +135,8 @@ const $ = s => document.querySelector(s);
 const raiz = $('#raiz');
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const hoje = () => iso(new Date());
+/* Datas sempre no horário de Brasília, seja qual for o fuso do celular */
+const hoje = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const addDias = (s, n) => { const d = new Date(s + 'T12:00'); d.setDate(d.getDate() + n); return iso(d); };
 const toMin = h => { const [a, b] = String(h).split(':').map(Number); return a * 60 + b; };
 const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
@@ -316,7 +317,7 @@ function telaPerfil() {
   const t = $('#tel'); t.oninput = () => { t.value = mascaraTel(t.value); };
   $('#salvarTel').onclick = async () => {
     const m = $('#telMsg'), v = t.value.trim(); m.className = 'msg'; m.textContent = 'Salvando...';
-    const { error } = await sb.rpc('atualizar_meu_perfil', { p_tel: v, p_foto: '' });
+    const { error } = await sb.rpc('atualizar_meu_perfil', { p_tel: v, p_foto: null });
     if (error) { m.className = 'msg erro'; m.textContent = error.message; return; }
     m.textContent = 'WhatsApp salvo.'; dados.perfil.tel = v;
   };
@@ -329,7 +330,7 @@ function telaPerfil() {
       const { error } = await sb.storage.from('equipe').upload(caminho, blob, { contentType: 'image/jpeg', upsert: true });
       if (error) throw error;
       const url = sb.storage.from('equipe').getPublicUrl(caminho).data.publicUrl;
-      const { error: e2 } = await sb.rpc('atualizar_meu_perfil', { p_tel: '', p_foto: url });
+      const { error: e2 } = await sb.rpc('atualizar_meu_perfil', { p_tel: null, p_foto: url });
       if (e2) throw e2;
       dados.perfil.foto = url; toast('Foto atualizada'); render();
     } catch (er) { m.className = 'msg erro'; m.textContent = 'Não foi possível enviar a foto. Tente uma imagem menor.'; }
