@@ -152,6 +152,7 @@ h2{font-family:var(--serif);font-size:36px;line-height:1.1;font-weight:600;lette
 .cod b{color:var(--ink);font-weight:600;letter-spacing:.04em}
 .acoes{display:grid;gap:6px;max-width:320px;margin:0 auto}
 .acoes .btn{text-decoration:none;display:block}
+.acoes .btn.claro{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}
 
 /* Carregando */
 .esq{height:62px;background:#fff;position:relative;overflow:hidden}
@@ -441,7 +442,7 @@ async function enviar() {
   const btn = $('#barraBtn'), err = $('#err');
   btn.disabled = true; btn.textContent = 'Enviando...'; err.textContent = '';
   const lb = $('#latBtn'); if (lb) { lb.disabled = true; lb.textContent = 'Enviando...'; }
-  const { data: agId, error } = await sb.rpc('solicitar_agendamento', {
+  const { data: resp, error } = await sb.rpc('solicitar_agendamento', {
     p_nome: form.nome.trim(), p_tel: form.tel.trim(), p_niver: form.niver || '', p_data: sel.data, p_hora: sel.hora,
     p_prof: sel.prof?.id || null, p_servs: sel.servs.map(s => s.id)
   });
@@ -450,7 +451,9 @@ async function enviar() {
     if (/preenchido/.test(error.message || '')) { const r = await sb.rpc('agenda_publica'); if (r.data) ocupados = r.data.ocupados || []; }
     atualizarBarra(); return;
   }
-  sucesso(agId);
+  // o banco devolve o código do pedido e quem vai atender (nome e WhatsApp da profissional)
+  const info = resp && typeof resp === 'object' ? resp : { id: resp };
+  sucesso(info.id, info);
 }
 function linkAgenda() {
   const ini = sel.data.replace(/-/g, '') + 'T' + sel.hora.replace(':', '') + '00';
@@ -459,14 +462,22 @@ function linkAgenda() {
     details: 'Pedido de horário: ' + sel.servs.map(s => s.nome).join(', ') + '. Aguardando confirmação pelo WhatsApp.' });
   return 'https://calendar.google.com/calendar/render?' + p;
 }
-function sucesso(agId) {
+/* Botão para a cliente avisar a profissional que vai atender */
+function zapProf(agId, info) {
+  const d = String(info.prof_tel || '').replace(/\D/g, '');
+  if (d.length < 10) return '';
+  const nome = String(info.prof_nome || '').trim().split(/\s+/)[0] || 'equipe';
+  const msg = `Olá ${nome}! Acabei de pedir um horário pelo site da Guria Dourada: ${sel.servs.map(s => s.nome).join(', ')}, ${quando().toLowerCase()}. Meu nome é ${form.nome.trim()}. Código GD-${String(agId || '').toUpperCase().slice(0, 6)}.`;
+  return `<a class="btn ouro" href="https://wa.me/${d.length <= 11 ? '55' + d : d}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Avisar a ${esc(nome)} no WhatsApp</a>`;
+}
+function sucesso(agId, info = {}) {
   barra.classList.remove('on'); $('#lateral')?.remove(); document.querySelector('.wrap').style.gridTemplateColumns = '1fr';
   app.classList.remove('vai', 'volta'); void app.offsetWidth; app.classList.add('entra');
   app.innerHTML = `<div class="ok"><svg viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="40" pathLength="1"/><path d="M26 43l11 11 21-23" pathLength="1"/></svg>
     <h2>Pedido enviado</h2>
     <p>${quando()}.</p><p>Vamos confirmar pelo WhatsApp ${esc(form.tel)}.</p>
     <div class="cod">Código do pedido <b>GD-${esc(String(agId || '').toUpperCase().slice(0, 6))}</b></div>
-    <div class="acoes"><a class="btn" href="${linkAgenda()}" target="_blank" rel="noopener">Salvar na minha agenda</a>
+    <div class="acoes">${zapProf(agId, info)}<a class="btn ${zapProf(agId, info) ? 'claro' : ''}" href="${linkAgenda()}" target="_blank" rel="noopener">Salvar na minha agenda</a>
     <button class="btn link" onclick="location.reload()">Fazer outro pedido</button></div></div>`;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
