@@ -66,7 +66,8 @@ h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:28px 4px 10px}
 .dia span{display:block;font-size:12.5px;color:var(--muted)}
 .dia b{display:block;font-size:22px;font-weight:600;line-height:1.2}
 .dia i{position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--gold)}
-.dia.on{background:var(--black);color:#fff}.dia.on span{color:#B3A086}
+.dia.on{background:var(--black);color:#fff}
+.dia.passado:not(.on){background:#FAFAFB;color:var(--muted)}.dia.on span{color:#B3A086}
 .at{display:grid;grid-template-columns:62px 1fr;gap:14px;padding:16px 18px;position:relative}
 .at+.at::before{content:"";position:absolute;top:0;left:18px;right:0;height:1px;background:var(--hair)}
 .at .h{font-size:18px;font-weight:600;line-height:1.2}
@@ -136,6 +137,8 @@ h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:28px 4px 10px}
 @keyframes aparece{from{opacity:0}}
 @keyframes sobeF{from{transform:translateY(40px);opacity:0}}
 @media (min-width:700px){.fundo{align-items:center}.folha{border-radius:24px}.horas{grid-template-columns:repeat(6,1fr)}}
+h3.dia-ganhos{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h3.dia-ganhos span:last-child{font-family:var(--font);font-size:16px;font-weight:600}
 .ganhos{display:block;width:100%;text-align:left;background:linear-gradient(135deg,#3A2416,#22150D);color:#F1E4C8;border-radius:20px;padding:16px 20px;margin:0 0 18px;box-shadow:0 10px 26px rgba(42,26,16,.18)}
 .ganhos span{display:block;font-size:14px;color:#C9B89A}
 .ganhos strong{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em;color:#F7EEDD;margin:2px 0}
@@ -364,22 +367,37 @@ function abrirRemarcar(a) {
   desenhar();
 }
 
+/* Resumo do dia escolhido: quanto produziu e (se o dono liberou) quanto ganhou de comissão */
+function resumoDoDia(doDia) {
+  const valor = a => +(a.total ?? a.preco) || 0;
+  const pagos = doDia.filter(a => a.status === 'fechado' || a.pag), abertos = doDia.filter(a => !(a.status === 'fechado' || a.pag));
+  const produziu = pagos.reduce((t, a) => t + valor(a), 0), previsto = abertos.reduce((t, a) => t + valor(a), 0);
+  const comDia = (dados.comissoes || []).filter(x => x.data === dia), com = comDia.reduce((t, x) => t + (+x.valor || 0), 0);
+  if (!doDia.length && !comDia.length) return '';
+  const quando = dia === hoje() ? 'hoje' : `em ${dataBR(dia).slice(0, 5)}`;
+  const n = k => `${k} atendimento${k === 1 ? '' : 's'}`;
+  const extra = [pagos.length ? `produziu ${brl(produziu)} em ${n(pagos.length)}` : '', abertos.length ? `${brl(previsto)} a receber em ${n(abertos.length)}` : ''].filter(Boolean).join(' · ');
+  if (dados.ver_comissao) {
+    const mes = dia.slice(0, 7), comMes = (dados.comissoes || []).filter(x => String(x.data).startsWith(mes)).reduce((t, x) => t + (+x.valor || 0), 0);
+    return `<button class="ganhos" id="verGanhos"><span>Sua comissão ${quando}</span><strong>${brl(com)}</strong><small>${extra}${extra ? ' · ' : ''}no mês ${brl(comMes)}</small></button>`;
+  }
+  const sub = pagos.length
+    ? `em ${n(pagos.length)} pago${pagos.length === 1 ? '' : 's'}${abertos.length ? ` · ${brl(previsto)} a receber` : ''}`
+    : `em ${n(abertos.length)} marcado${abertos.length === 1 ? '' : 's'}`;
+  return `<div class="ganhos"><span>${pagos.length ? `Você produziu ${quando}` : `Previsto ${quando}`}</span><strong>${brl(pagos.length ? produziu : previsto)}</strong><small>${sub}</small></div>`;
+}
+
 function telaAgenda() {
   const ag = dados.agenda || [], c = $('#conteudo');
-  const dias = []; for (let i = 0; i <= 60; i++) dias.push(addDias(hoje(), i));
+  const dias = []; for (let i = -60; i <= 60; i++) dias.push(addDias(hoje(), i));
   if (!dias.includes(dia)) dia = hoje();
   const doDia = ag.filter(a => a.data === dia);
-  const d = new Date(dia + 'T12:00');
-  let ganhos = '';
-  if (dados.ver_comissao) {
-    const mes = hoje().slice(0, 7), l = (dados.comissoes || []).filter(x => String(x.data).startsWith(mes));
-    const tot = l.reduce((t, x) => t + (+x.valor || 0), 0), nomeMes = MES_LONGO[+mes.slice(5) - 1];
-    ganhos = `<button class="ganhos" id="verGanhos"><span>Seus ganhos em ${nomeMes}</span><strong>${brl(tot)}</strong><small>${l.length} atendimento${l.length === 1 ? '' : 's'} pago${l.length === 1 ? '' : 's'} · ver detalhes</small></button>`;
-  }
+  const d = new Date(dia + 'T12:00'), ontem = addDias(hoje(), -1);
+  const ganhos = resumoDoDia(doDia);
   c.innerHTML = `<h1>Minha agenda</h1><p class="sub">${SEM_LONGO[d.getDay()]}, ${d.getDate()} de ${MES_LONGO[d.getMonth()]}. ${doDia.length ? `${doDia.length} atendimento${doDia.length > 1 ? 's' : ''}.` : 'Dia livre.'}</p>
     ${ganhos}
     <div class="dias">${dias.map(x => { const dd = new Date(x + 'T12:00'); const tem = ag.some(a => a.data === x);
-      return `<button class="dia ${x === dia ? 'on' : ''}" data-d="${x}"><span>${x === hoje() ? 'Hoje' : SEM[dd.getDay()]}</span><b>${dd.getDate()}</b>${tem ? '<i></i>' : ''}</button>`; }).join('')}</div>
+      return `<button class="dia ${x === dia ? 'on' : ''} ${x < hoje() ? 'passado' : ''}" data-d="${x}"><span>${x === hoje() ? 'Hoje' : x === ontem ? 'Ontem' : SEM[dd.getDay()]}</span><b>${dd.getDate()}</b>${tem ? '<i></i>' : ''}</button>`; }).join('')}</div>
     ${doDia.length ? `<div class="lista entra">${doDia.map(a => cartao(a)).join('')}</div>` : '<div class="lista"><div class="vazio">Nenhum atendimento neste dia.</div></div>'}`;
   c.querySelectorAll('.dia').forEach(b => b.onclick = () => { dia = b.dataset.d; render(); });
   const vg = $('#verGanhos'); if (vg) vg.onclick = () => { aba = 'ganhos'; render(); scrollTo(0, 0); };
@@ -408,8 +426,10 @@ function telaGanhos() {
   $('#conteudo').innerHTML = `<h1>Meus ganhos</h1><p class="sub">Comissão de ${MES_LONGO[ini.getMonth()]} de ${ini.getFullYear()}.</p>
     <div class="filtros"><button class="filtro ${periodo === 'este' ? 'on' : ''}" data-p="este">Este mês</button><button class="filtro ${periodo === 'passado' ? 'on' : ''}" data-p="passado">Mês passado</button></div>
     <div class="resumo"><div><span>Comissão</span><strong>${brl(tot)}</strong></div><div><span>Você produziu</span><strong>${brl(base)}</strong></div></div>
-    <h3>Atendimentos</h3>
-    <div class="lista">${l.map(x => `<div class="linha"><div class="txt"><b>${esc(limparNome(x.item))}</b><div class="meta">${dataBR(x.data)} · ${esc(x.pct)}% de ${brl(x.base)}</div></div><span class="valor">${brl(x.valor)}</span></div>`).join('') || '<div class="vazio">Nenhum atendimento pago neste mês ainda.</div>'}</div>`;
+    ${l.length ? [...new Set(l.map(x => x.data))].sort().reverse().map(dt => { const dd = new Date(dt + 'T12:00'), ld = l.filter(x => x.data === dt);
+      return `<h3 class="dia-ganhos"><span>${dt === hoje() ? 'Hoje' : SEM_LONGO[dd.getDay()]}, ${dataBR(dt).slice(0, 5)}</span><span>${brl(ld.reduce((t, x) => t + (+x.valor || 0), 0))}</span></h3>
+        <div class="lista">${ld.map(x => `<div class="linha"><div class="txt"><b>${esc(limparNome(x.item))}</b><div class="meta">${esc(x.pct)}% de ${brl(x.base)}</div></div><span class="valor">${brl(x.valor)}</span></div>`).join('')}</div>`; }).join('')
+      : '<div class="lista" style="margin-top:20px"><div class="vazio">Nenhum atendimento pago neste mês ainda.</div></div>'}`;
   $('#conteudo').querySelectorAll('.filtro').forEach(b => b.onclick = () => { periodo = b.dataset.p; render(); });
 }
 
