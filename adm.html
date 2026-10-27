@@ -96,6 +96,7 @@ option,optgroup{background:#fff}
 .ag:hover{transform:translateY(-1px)}
 .ag .st{display:inline-block;margin-top:4px;font-size:11px;font-weight:600;background:var(--fill);color:var(--muted);border-radius:99px;padding:0 8px}
 .ag.fechado{opacity:.62}
+.ag.bloqueado{background:repeating-linear-gradient(135deg,#F2F2F4 0 8px,#E9E9EC 8px 16px);--cor:#A1A1A6;color:var(--muted)}
 .ag.pendente{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(169,128,47,.08) 6px 12px)}
 
 /* Tabelas */
@@ -842,18 +843,20 @@ function telaAgenda() {
     const col = profs.findIndex(p => p.id === a.prof); if (col < 0) return;
     const row = Math.floor((toMin(a.hora) - ini) / passo) + 2; if (row < 2) return;
     const span = Math.max(1, Math.ceil(a.dur / passo)), p = prof(a.prof), c = cli(a.cli), sv = serv(a.serv);
+    if (a.status === 'bloqueado') { g += `<div class="ag bloqueado" data-ag="${a.id}" style="grid-column:${col + 2};grid-row:${row} / span ${span}"><b>🔒 ${a.hora} Bloqueado</b>${esc(a.obs || '')}</div>`; return; }
     g += `<div class="ag ${a.status}" data-ag="${a.id}" style="grid-column:${col + 2};grid-row:${row} / span ${span};background:${p.cor}14;--cor:${p.cor}">
       <b>${a.hora} ${esc(c ? c.nome : 'Cliente')}${c && niverRef(c.niver) && Math.abs(niverRef(c.niver).diff) <= 7 ? ' 🎂' : ''}${c && cuponsAtivos(c.id).length ? ' 🎟️' : ''}</b>${esc(sv ? sv.nome : '')}${a.status === 'fechado' ? '<br><span class="st">Pago</span>' : ''}</div>`;
   });
   g += `</div>`;
-  const livres = ags.length;
+  const livres = ags.filter(a => a.status !== 'bloqueado').length;
   main.innerHTML = `<h1>Agenda</h1><p class="sub">${nomeDia.charAt(0).toUpperCase() + nomeDia.slice(1)}. ${livres} atendimento${livres === 1 ? '' : 's'} marcado${livres === 1 ? '' : 's'}. ${ehCelular() ? 'Toque' : 'Clique'} num horário vazio para agendar.</p>
   ${db.exemplo ? `<div class="aviso">Você está vendo dados de exemplo. Teste à vontade: clique num atendimento e feche a comanda para ver a comissão cair no relatório. Quando for usar de verdade, vá em Backup e apague o exemplo.</div>` : ''}
   ${(db.config.fechado || []).includes(new Date(diaAgenda + 'T12:00').getDay()) ? '<div class="aviso">O salão está marcado como fechado neste dia. O site não aceita pedidos para ele.</div>' : ''}
   ${painelPendentes()}
   ${diaAgenda === hoje() ? painelLembretes(lembretes(), 4) : ''}
   <div class="barra"><button class="btn" id="ant" aria-label="Dia anterior">‹</button><button class="btn" id="hj">Hoje</button><button class="btn" id="prx" aria-label="Próximo dia">›</button>
-  <input type="date" id="dia" value="${diaAgenda}"><button class="btn pri" id="novoAg">Novo agendamento</button></div>
+  <input type="date" id="dia" value="${diaAgenda}"><button class="btn pri" id="novoAg">Novo agendamento</button>
+  <button class="btn" id="intervaloAg" title="Mudar o intervalo dos horários da agenda e do site">Horários de ${intervalo} em ${intervalo} min</button></div>
   ${chips}<div class="rolagem">${profs.length ? g : '<div class="painel vazio">Cadastre a equipe em Cadastros para montar a agenda.</div>'}</div>`;
   ligarLembretes(main);
   ligarPendentes(main);
@@ -863,6 +866,7 @@ function telaAgenda() {
   $('#hj').onclick = () => { diaAgenda = hoje(); render(); };
   $('#dia').onchange = e => { if (e.target.value) { diaAgenda = e.target.value; render(); } };
   $('#novoAg').onclick = () => formAgendamento({ data: diaAgenda, hora: abre, prof: profs[0]?.id || todas[0]?.id });
+  $('#intervaloAg').onclick = () => editarSalao();
   main.querySelectorAll('.slot').forEach(el => el.onclick = () => formAgendamento({ data: diaAgenda, hora: el.dataset.hora, prof: el.dataset.prof }));
   main.querySelectorAll('.ag').forEach(el => el.onclick = () => abrirAg(db.ags.find(a => a.id === el.dataset.ag)));
 }
@@ -894,6 +898,28 @@ function formAgendamento(a) {
     const cc = cli(cid), agSalvo = db.ags.find(x=>x.id===novo.id);
     if (!edit && cc?.tel && agSalvo) { const zl=zapAg(cc,agSalvo,'new'); if(zl) window.open(zl,'_blank'); }
   });
+  buscaDeCliente([...document.querySelectorAll('.fundo')].pop());
+}
+
+/* Campo de busca acima da lista de clientes: filtra por nome ou telefone, sem acento */
+function buscaDeCliente(f) {
+  const sel = f?.querySelector('[name=cli]'); if (!sel) return;
+  const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+  const todas = [...sel.options].map(o => ({ v: o.value, t: o.textContent, tel: (cli(o.value)?.tel || '').replace(/\D/g, '') }));
+  const lab = document.createElement('label'); lab.className = 'cheio';
+  lab.innerHTML = 'Buscar cliente<input type="search" placeholder="Digite o nome ou o telefone" autocomplete="off">';
+  sel.closest('label').before(lab);
+  const inp = lab.querySelector('input');
+  inp.oninput = () => {
+    const q = norm(inp.value.trim()), d = inp.value.replace(/\D/g, '');
+    const lista = todas.filter(o => !o.v || o.v === '__nova' || !q || norm(o.t).includes(q) || (d.length >= 4 && o.tel.includes(d)));
+    const atual = sel.value;
+    sel.innerHTML = lista.map(o => `<option value="${esc(o.v)}">${esc(o.t)}</option>`).join('');
+    const achadas = lista.filter(o => o.v && o.v !== '__nova');
+    sel.value = achadas.length === 1 ? achadas[0].v : (lista.some(o => o.v === atual) ? atual : '');
+    sel.dispatchEvent(new Event('change'));
+  };
+  inp.focus();
 }
 
 function zapAg(c, a, tipo) {
@@ -908,6 +934,20 @@ function zapAg(c, a, tipo) {
 }
 
 function abrirAg(a) {
+  if (a.status === 'bloqueado') {
+    const f = modal(`<h2>Horário bloqueado</h2><p>${esc(prof(a.prof)?.nome || '')} · ${dataBR(a.data)} das ${a.hora} às ${toHM(toMin(a.hora) + (+a.dur || 60))}${a.obs ? `<br>Motivo: ${esc(a.obs)}` : ''}</p>
+      <p style="font-size:14px">Enquanto estiver bloqueado, o site não oferece esse horário.</p>
+      <div class="acoes"><button class="btn" data-sair>Voltar</button><button class="btn pri" data-desb>Desbloquear</button></div>`);
+    f.querySelector('[data-sair]').onclick = () => f.remove();
+    f.querySelector('[data-desb]').onclick = async () => {
+      const { error } = await sb.rpc('desbloquear_horario', { p_id: a.id });
+      if (error && !/Could not find/i.test(error.message)) { toast(error.message); return; }
+      const a2 = db.ags.find(x => x.id === a.id); if (a2) a2.status = 'cancelado';
+      if (error) salvar(); else { const k = 'ags:' + a.id; if (a2) snap[k] = est(a2); cacheLocal(); }
+      f.remove(); render(); toast('Horário desbloqueado');
+    };
+    return;
+  }
   const c = cli(a.cli), s = serv(a.serv), p = prof(a.prof);
   const f = modal(`<h2>${esc(c?.nome || 'Cliente')}</h2>
     <p>${dataBR(a.data)} às ${a.hora} com <b>${esc(p?.nome)}</b><br>${esc(s?.nome)} · ${a.dur} min · ${brl(s?.preco)}${c?.tel ? `<br>Telefone: ${esc(c.tel)}` : ''}${a.obs ? `<br>Obs: ${esc(a.obs)}` : ''}</p>
