@@ -143,6 +143,27 @@ h3.dia-ganhos span:last-child{font-family:var(--font);font-size:16px;font-weight
 .ganhos span{display:block;font-size:14px;color:#C9B89A}
 .ganhos strong{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em;color:#F7EEDD;margin:2px 0}
 .ganhos small{font-size:13px;color:#B3A086}
+.acoes-topo{display:flex;gap:8px;margin:-8px 0 18px}
+.acoes-topo .btn{flex:1;justify-content:center;padding:12px}
+.at .meta.comissao{color:var(--gold);font-weight:600}
+.at.bloq{background:repeating-linear-gradient(135deg,#FAFAFB 0 10px,#F3F3F5 10px 20px)}
+.folha .secao{margin-top:16px}
+.folha .rot{display:block;font-size:14px;color:var(--muted);margin:0 2px 8px;font-weight:600}
+.folha .rot i{font-style:normal;font-weight:400}
+.folha .busca,.folha select{width:100%;border:0;border-radius:12px;padding:12px 14px;font-size:16px;background:var(--bg);margin-bottom:8px}
+.folha .busca:focus,.folha select:focus{outline:none;box-shadow:inset 0 0 0 2px var(--gold);background:#fff}
+.folha .resultados,.folha .escolha{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
+.folha .res{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;text-align:left;background:var(--bg);border-radius:12px;padding:10px 14px}
+.folha .res b{font-weight:600;font-size:15px}
+.folha .res small{grid-column:1;color:var(--muted);font-size:13px}
+.folha .res .ck{grid-row:1/3;grid-column:2;font-size:18px;color:var(--gold)}
+.folha .res.on{background:var(--gold-soft)}
+.folha .escolhida{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--gold-soft);border-radius:14px;padding:12px 14px}
+.folha .escolhida b{display:block}.folha .escolhida small{color:var(--muted)}
+.folha .link{color:var(--gold);font-weight:600;font-size:15px;padding:6px 2px}
+.folha .periodo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.folha .periodo label{font-size:14px;color:var(--muted)}
+.folha .filtros{margin-bottom:0}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--black);color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.2);animation:sobe .3s var(--ease)}
 @keyframes sobe{from{opacity:0;transform:translate(-50%,10px)}}
 .entra{animation:entra .45s var(--ease)}
@@ -257,8 +278,20 @@ function render() {
   else scrollTo(0, rolagem);
 }
 
+function comissaoDe(a) {
+  if (!dados.ver_comissao) return '';
+  if (a.minha_com != null) return `Sua comissão: ${brl(a.minha_com)}`;
+  if (a.status === 'fechado' || a.pag) return '';
+  const sv = (dados.servicos || []).find(x => x.id === a.serv), p = dados.perfil || {};
+  const pct = sv && sv.com !== '' && sv.com != null ? +sv.com : +p.comServ;
+  return pct ? `Comissão prevista: ${brl((+a.preco || 0) * pct / 100)}` : '';
+}
 function cartao(a, comData) {
   const fim = toHM(toMin(a.hora) + (+a.dur || 60));
+  if (a.status === 'bloqueado') return `<div class="at bloq"><div class="h">${esc(a.hora)}<small>até ${fim}</small></div><div class="corpo">
+    <div class="linha-topo"><b>Horário bloqueado</b><span class="st fechado">🔒</span></div>
+    <div class="meta">${esc(a.obs || 'O site não oferece esse horário.')}</div></div>
+    <div class="acoes">${a.data >= hoje() ? `<button class="btn claro" data-desb="${esc(a.id)}">Desbloquear</button>` : ''}</div></div>`;
   const dt = new Date(a.data + 'T12:00');
   const eu = primeiro(dados.perfil?.nome), ela = primeiro(a.cliente), quandoTxt = `${SEM_LONGO[dt.getDay()].toLowerCase()}, ${dataBR(a.data)} às ${a.hora}`;
   const futuro = a.data >= hoje();
@@ -273,7 +306,7 @@ function cartao(a, comData) {
   return `<div class="at"><div class="h">${esc(a.hora)}<small>até ${fim}</small></div><div class="corpo">
     <div class="linha-topo"><b>${esc(a.cliente || 'Cliente')}</b><span class="st ${esc(a.status)}">${ST[a.status] || esc(a.status)}</span></div>
     <div class="meta">${esc(limparNome(a.servico))}${comData ? ` · ${SEM[dt.getDay()]} ${dataBR(a.data).slice(0, 5)}` : ''}</div>
-    <div class="meta valor">${esc(valor)}</div></div>
+    <div class="meta valor">${esc(valor)}</div>${comissaoDe(a) ? `<div class="meta comissao">${esc(comissaoDe(a))}</div>` : ''}</div>
     <div class="acoes">${a.status === 'pendente' ? `<button class="btn" data-conf="${esc(a.id)}" data-zap="${esc(z)}">Confirmar</button><button class="btn perigo" data-rec="${esc(a.id)}">Recusar</button>` : ''}
       ${temTel ? `<a class="btn zap" href="${esc(zLivre)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
       ${futuro && a.status === 'agendado' ? `<button class="btn claro" data-rem="${esc(a.id)}">Remarcar</button>` : ''}
@@ -282,6 +315,12 @@ function cartao(a, comData) {
 }
 function quandoTexto(data, hora) { const d = new Date(data + 'T12:00'); return `${SEM_LONGO[d.getDay()].toLowerCase()}, ${dataBR(data)} às ${hora}`; }
 function ligarCartoes(el) {
+  el.querySelectorAll('[data-desb]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    const { error } = await sb.rpc('desbloquear_horario', { p_id: b.dataset.desb });
+    if (error) { toast(semFuncao(error)); b.disabled = false; return; }
+    toast('Horário desbloqueado'); carregar(false);
+  });
   el.querySelectorAll('[data-rem]').forEach(b => b.onclick = () => abrirRemarcar(dados.agenda.find(x => x.id === b.dataset.rem)));
   el.querySelectorAll('[data-des]').forEach(b => b.onclick = async () => {
     const a = dados.agenda.find(x => x.id === b.dataset.des); if (!a) return;
@@ -312,12 +351,14 @@ function ligarCartoes(el) {
 }
 
 /* Remarcar: escolhe dia e horário livre na agenda dela */
-function livresDela(data, a) {
+function livresDela(data, a) { return slotsLivres(data, +a.dur || 60, a.id); }
+/* Horários livres dela num dia, de 30 em 30 min (ou menos, se o salão usar 15) */
+function slotsLivres(data, d, ignorarId) {
   const c = dados.salao || {}; if (!c.abre || !c.fecha) return [];
   if ((c.fechado || []).includes(new Date(data + 'T12:00').getDay())) return [];
-  const ini = toMin(c.abre), fim = toMin(c.fecha), passo = +(c.intervalo || 30), d = +a.dur || 60;
-  const corte = data === hoje() ? minutosAgora() + 30 : -1;
-  const oc = (dados.agenda || []).filter(x => x.id !== a.id && x.data === data);
+  const ini = toMin(c.abre), fim = toMin(c.fecha), passo = Math.min(+(c.intervalo || 30), 30);
+  const corte = data === hoje() ? minutosAgora() + 15 : -1;
+  const oc = (dados.agenda || []).filter(x => x.id !== ignorarId && x.data === data);
   const out = [];
   for (let m = ini; m + d <= fim; m += passo) {
     if (m <= corte) continue;
@@ -387,18 +428,163 @@ function resumoDoDia(doDia) {
   return `<div class="ganhos"><span>${pagos.length ? `Você produziu ${quando}` : `Previsto ${quando}`}</span><strong>${brl(pagos.length ? produziu : previsto)}</strong><small>${sub}</small></div>`;
 }
 
+const semFuncao = e => /Could not find/i.test(e?.message || '') ? 'Essa função ainda não foi ativada no banco. Fale com o salão.' : (e?.message || 'Sem conexão. Tente de novo.');
+function folha(html) {
+  const f = document.createElement('div'); f.className = 'fundo';
+  f.innerHTML = `<div class="folha" role="dialog" aria-modal="true">${html}</div>`;
+  f.addEventListener('mousedown', e => { if (e.target === f) f.remove(); });
+  document.body.appendChild(f);
+  f.querySelector('[data-fechar]')?.addEventListener('click', () => f.remove());
+  return f;
+}
+function faixaDias(f, alvo, valido, atual, aoEscolher) {
+  const dias = []; for (let i = 0; i <= 60; i++) dias.push(addDias(hoje(), i));
+  const el = f.querySelector(alvo);
+  el.innerHTML = dias.map(x => { const dd = new Date(x + 'T12:00'); const ok = valido(x);
+    return `<button class="dia ${x === atual ? 'on' : ''}" data-d="${x}" ${ok ? '' : 'disabled'}><span>${x === hoje() ? 'Hoje' : SEM[dd.getDay()]}</span><b>${dd.getDate()}</b></button>`; }).join('');
+  el.querySelectorAll('.dia').forEach(b => b.onclick = () => aoEscolher(b.dataset.d));
+  el.querySelector('.dia.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+}
+
+/* + Agendar cliente: busca a cliente (ou cadastra), serviços, dia e horário livre dela */
+function abrirAgendar() {
+  const st = { cli: null, nova: false, servs: [], dia: null, hora: null, buscaServ: '' };
+  const f = folha(`<h2>Agendar cliente</h2><p class="sub">Para quando a cliente marca com você pelo WhatsApp.</p>
+    <div class="secao"><label class="rot">Cliente</label><div id="agCli"></div></div>
+    <div class="secao"><label class="rot">Serviços</label><input class="busca" id="agBuscaServ" type="search" placeholder="Buscar serviço" autocomplete="off"><div class="escolha" id="agServs"></div></div>
+    <div class="secao"><label class="rot">Dia</label><div class="dias" id="agDias"></div></div>
+    <div class="secao"><label class="rot">Horário</label><div id="agHoras"></div></div>
+    <div class="msg erro" id="agMsg"></div>
+    <div class="rodape"><button class="btn claro" data-fechar>Cancelar</button><button class="btn" id="agOk" disabled>Agendar</button></div>`);
+  const dur = () => st.servs.reduce((t, x) => t + (+x.dur || 60), 0) || 60;
+  const cliTel = () => st.nova ? f.querySelector('#agTel')?.value : st.cli?.tel;
+  const pronto = () => (st.cli || (st.nova && f.querySelector('#agNome')?.value.trim().length >= 2 && String(f.querySelector('#agTel')?.value).replace(/\D/g, '').length >= 10)) && st.servs.length && st.dia && st.hora;
+  const botao = () => { const ok = f.querySelector('#agOk'); ok.disabled = !pronto(); ok.textContent = cliTel() ? 'Agendar e avisar' : 'Agendar'; };
+  let tBusca;
+  const desenharCli = () => {
+    const el = f.querySelector('#agCli');
+    if (st.cli) {
+      el.innerHTML = `<div class="escolhida"><span><b>${esc(st.cli.nome)}</b><small>${esc(st.cli.tel || 'sem WhatsApp')}</small></span><button class="btn claro" id="agTroca">Trocar</button></div>`;
+      el.querySelector('#agTroca').onclick = () => { st.cli = null; desenharCli(); botao(); };
+    } else if (st.nova) {
+      el.innerHTML = `<input class="busca" id="agNome" placeholder="Nome da cliente" autocomplete="off"><input class="busca" id="agTel" type="tel" inputmode="numeric" placeholder="WhatsApp (51) 99999-9999">
+        <button class="link" id="agVoltaBusca">Buscar cliente já cadastrada</button>`;
+      const t = el.querySelector('#agTel'); t.oninput = () => { t.value = mascaraTel(t.value); botao(); };
+      el.querySelector('#agNome').oninput = botao;
+      el.querySelector('#agVoltaBusca').onclick = () => { st.nova = false; desenharCli(); botao(); };
+      el.querySelector('#agNome').focus();
+    } else {
+      el.innerHTML = `<input class="busca" id="agBusca" type="search" placeholder="Nome ou telefone da cliente" autocomplete="off"><div class="resultados" id="agRes"></div>
+        <button class="link" id="agNova">+ Cliente nova</button>`;
+      const inp = el.querySelector('#agBusca'), res = el.querySelector('#agRes');
+      inp.oninput = () => {
+        clearTimeout(tBusca);
+        const q = inp.value.trim();
+        if (q.length < 2) { res.innerHTML = ''; return; }
+        tBusca = setTimeout(async () => {
+          const { data, error } = await sb.rpc('buscar_clientes', { p_q: q });
+          if (inp.value.trim() !== q) return;
+          if (error) { res.innerHTML = `<div class="vazio">${esc(semFuncao(error))}</div>`; return; }
+          res.innerHTML = (data || []).map((c, i) => `<button class="res" data-i="${i}"><b>${esc(c.nome)}</b><small>${esc(c.tel || 'sem WhatsApp')}</small></button>`).join('') || '<div class="vazio">Nenhuma cliente com esse nome. Toque em "+ Cliente nova".</div>';
+          res.querySelectorAll('.res').forEach(b => b.onclick = () => { st.cli = data[+b.dataset.i]; desenharCli(); botao(); });
+        }, 300);
+      };
+      el.querySelector('#agNova').onclick = () => { st.nova = true; desenharCli(); botao(); };
+    }
+  };
+  const desenharServs = () => {
+    const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+    const q = norm(st.buscaServ);
+    const lista = (dados.servicos || []).map(x => ({ ...x, nomeL: limparNome(x.nome) })).filter(x => !q || norm(x.nomeL).includes(q) || st.servs.some(y => y.id === x.id))
+      .sort((a, b) => a.nomeL.localeCompare(b.nomeL, 'pt-BR'));
+    const el = f.querySelector('#agServs');
+    el.innerHTML = lista.map(x => { const on = st.servs.some(y => y.id === x.id);
+      return `<button class="res ${on ? 'on' : ''}" data-s="${esc(x.id)}"><b>${esc(x.nomeL)}</b><small>${+x.preco ? brl(x.preco) : 'Avaliação'} · ${+x.dur || 60} min</small><span class="ck">${on ? '✓' : '+'}</span></button>`; }).join('') || '<div class="vazio">Nenhum serviço com esse nome.</div>';
+    el.querySelectorAll('.res').forEach(b => b.onclick = () => {
+      const x = (dados.servicos || []).find(y => y.id === b.dataset.s), i = st.servs.findIndex(y => y.id === x.id);
+      if (i >= 0) st.servs.splice(i, 1); else st.servs.push(x);
+      st.hora = null; desenharServs(); desenharDias(); botao();
+    });
+  };
+  const desenharDias = () => {
+    if (st.dia && !slotsLivres(st.dia, dur()).length) st.dia = null;
+    if (!st.dia) st.dia = [...Array(61).keys()].map(i => addDias(hoje(), i)).find(x => slotsLivres(x, dur()).length) || null;
+    faixaDias(f, '#agDias', x => slotsLivres(x, dur()).length > 0, st.dia, x => { st.dia = x; st.hora = null; desenharDias(); botao(); });
+    const hs = st.dia ? slotsLivres(st.dia, dur()) : [];
+    f.querySelector('#agHoras').innerHTML = hs.length ? `<div class="horas">${hs.map(h => `<button class="hora ${h === st.hora ? 'on' : ''}" data-h="${h}">${h}</button>`).join('')}</div>` : '<div class="vazio">Sem horário livre nesse dia.</div>';
+    f.querySelectorAll('#agHoras .hora').forEach(b => b.onclick = () => { st.hora = b.dataset.h; desenharDias(); botao(); });
+  };
+  f.querySelector('#agBuscaServ').oninput = e => { st.buscaServ = e.target.value; desenharServs(); };
+  desenharCli(); desenharServs(); desenharDias(); botao();
+  const ok = f.querySelector('#agOk');
+  ok.onclick = async () => {
+    if (!pronto()) return;
+    const novaNome = st.nova ? f.querySelector('#agNome').value.trim() : '', novaTel = st.nova ? f.querySelector('#agTel').value.trim() : '';
+    const nome = st.cli?.nome || novaNome, tel = st.cli?.tel || novaTel, diaF = st.dia, horaF = st.hora, servs = st.servs.map(x => x.id);
+    const nomesServ = st.servs.map(x => limparNome(x.nome)).join(', ');
+    f.querySelector('.folha').style.pointerEvents = 'none'; ok.disabled = true; ok.textContent = 'Salvando...';
+    const z = linkZap(tel, `Olá ${primeiro(nome)}! Aqui é a ${primeiro(dados.perfil?.nome)}, da Guria Dourada. Seu horário de ${nomesServ} está marcado para ${quandoTexto(diaF, horaF)}. Te espero!`);
+    const janela = z ? window.open('', '_blank') : null;
+    const { error } = await sb.rpc('agendar_pela_equipe', { p_cli: st.cli?.id || null, p_nome: novaNome, p_tel: novaTel, p_data: diaF, p_hora: horaF, p_servs: servs });
+    if (error) {
+      if (janela) janela.close();
+      f.querySelector('#agMsg').textContent = semFuncao(error);
+      f.querySelector('.folha').style.pointerEvents = ''; botao(); return;
+    }
+    if (janela) janela.location = z;
+    f.remove(); toast('Cliente agendada'); dia = diaF; carregar(false);
+  };
+}
+
+/* Bloquear horário: um período ou o dia inteiro */
+function abrirBloquear() {
+  const c = dados.salao || {}, ini = toMin(c.abre || '08:00'), fim = toMin(c.fecha || '20:00');
+  const marcas = []; for (let m = ini; m < fim; m += 30) marcas.push(toHM(m));
+  marcas.push(toHM(fim)); // o fim é sempre o fechamento exato, mesmo fora da meia hora
+  const st = { dia: dia >= hoje() ? dia : hoje(), de: marcas[0], ate: marcas[marcas.length - 1], inteiro: true };
+  const f = folha(`<h2>Bloquear horário</h2><p class="sub">Folga, compromisso ou imprevisto. O site deixa de oferecer esse horário.</p>
+    <div class="secao"><label class="rot">Dia</label><div class="dias" id="blDias"></div></div>
+    <div class="secao"><label class="rot">Período</label>
+      <div class="filtros"><button class="filtro" data-int="1">Dia inteiro</button><button class="filtro" data-int="0">Só um período</button></div>
+      <div class="periodo" id="blPer"><label>Das<select id="blDe">${marcas.slice(0, -1).map(h => `<option>${h}</option>`).join('')}</select></label>
+      <label>Até<select id="blAte">${marcas.slice(1).map(h => `<option>${h}</option>`).join('')}</select></label></div></div>
+    <div class="secao"><label class="rot">Motivo <i>(opcional, só você e o salão veem)</i></label><input class="busca" id="blMotivo" maxlength="120" placeholder="Ex.: consulta médica"></div>
+    <div class="msg erro" id="blMsg"></div>
+    <div class="rodape"><button class="btn claro" data-fechar>Cancelar</button><button class="btn" id="blOk">Bloquear</button></div>`);
+  const desenhar = () => {
+    faixaDias(f, '#blDias', x => !(c.fechado || []).includes(new Date(x + 'T12:00').getDay()), st.dia, x => { st.dia = x; desenhar(); });
+    f.querySelectorAll('[data-int]').forEach(b => b.classList.toggle('on', (b.dataset.int === '1') === st.inteiro));
+    f.querySelector('#blPer').hidden = st.inteiro;
+  };
+  f.querySelectorAll('[data-int]').forEach(b => b.onclick = () => { st.inteiro = b.dataset.int === '1'; desenhar(); });
+  f.querySelector('#blAte').value = st.ate;
+  desenhar();
+  const ok = f.querySelector('#blOk');
+  ok.onclick = async () => {
+    const de = st.inteiro ? marcas[0] : f.querySelector('#blDe').value, ate = st.inteiro ? marcas[marcas.length - 1] : f.querySelector('#blAte').value;
+    if (toMin(ate) <= toMin(de)) { f.querySelector('#blMsg').textContent = 'O fim precisa ser depois do início.'; return; }
+    ok.disabled = true; ok.textContent = 'Salvando...';
+    const { error } = await sb.rpc('bloquear_horario', { p_data: st.dia, p_ini: de, p_fim: ate, p_motivo: f.querySelector('#blMotivo').value });
+    if (error) { f.querySelector('#blMsg').textContent = semFuncao(error); ok.disabled = false; ok.textContent = 'Bloquear'; return; }
+    f.remove(); toast('Horário bloqueado'); dia = st.dia; carregar(false);
+  };
+}
+
 function telaAgenda() {
   const ag = dados.agenda || [], c = $('#conteudo');
   const dias = []; for (let i = -60; i <= 60; i++) dias.push(addDias(hoje(), i));
   if (!dias.includes(dia)) dia = hoje();
-  const doDia = ag.filter(a => a.data === dia);
+  const doDiaTudo = ag.filter(a => a.data === dia), doDia = doDiaTudo.filter(a => a.status !== 'bloqueado');
   const d = new Date(dia + 'T12:00'), ontem = addDias(hoje(), -1);
   const ganhos = resumoDoDia(doDia);
   c.innerHTML = `<h1>Minha agenda</h1><p class="sub">${SEM_LONGO[d.getDay()]}, ${d.getDate()} de ${MES_LONGO[d.getMonth()]}. ${doDia.length ? `${doDia.length} atendimento${doDia.length > 1 ? 's' : ''}.` : 'Dia livre.'}</p>
+    <div class="acoes-topo"><button class="btn" id="novoAg">+ Agendar cliente</button><button class="btn claro" id="bloqAg">Bloquear horário</button></div>
     ${ganhos}
     <div class="dias">${dias.map(x => { const dd = new Date(x + 'T12:00'); const tem = ag.some(a => a.data === x);
       return `<button class="dia ${x === dia ? 'on' : ''} ${x < hoje() ? 'passado' : ''}" data-d="${x}"><span>${x === hoje() ? 'Hoje' : x === ontem ? 'Ontem' : SEM[dd.getDay()]}</span><b>${dd.getDate()}</b>${tem ? '<i></i>' : ''}</button>`; }).join('')}</div>
-    ${doDia.length ? `<div class="lista entra">${doDia.map(a => cartao(a)).join('')}</div>` : '<div class="lista"><div class="vazio">Nenhum atendimento neste dia.</div></div>'}`;
+    ${doDiaTudo.length ? `<div class="lista entra">${doDiaTudo.map(a => cartao(a)).join('')}</div>` : '<div class="lista"><div class="vazio">Nenhum atendimento neste dia.</div></div>'}`;
+  $('#novoAg').onclick = () => abrirAgendar();
+  $('#bloqAg').onclick = () => abrirBloquear();
   c.querySelectorAll('.dia').forEach(b => b.onclick = () => { dia = b.dataset.d; render(); });
   const vg = $('#verGanhos'); if (vg) vg.onclick = () => { aba = 'ganhos'; render(); scrollTo(0, 0); };
   c.querySelector('.dia.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
