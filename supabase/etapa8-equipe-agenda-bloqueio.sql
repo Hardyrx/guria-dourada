@@ -16,7 +16,7 @@ begin
   select ver_comissao, email into v_ver, v_email from public.equipe where user_id = auth.uid();
   return jsonb_build_object(
     'perfil', (select jsonb_build_object('id', id, 'nome', dados->'nome', 'cor', dados->'cor',
-                 'foto', dados->'foto', 'tel', dados->'tel', 'comServ', dados->'comServ', 'comProd', dados->'comProd')
+                 'foto', dados->'foto', 'tel', dados->'tel', 'comServ', case when coalesce(v_ver, false) then dados->'comServ' end, 'comProd', case when coalesce(v_ver, false) then dados->'comProd' end)
                from public.registros where tipo = 'profs' and id = v_prof),
     'email', v_email,
     'ver_comissao', coalesce(v_ver, false),
@@ -24,7 +24,7 @@ begin
                  'intervalo', dados->'intervalo', 'fechado', coalesce(dados->'fechado', '[]'::jsonb))
               from public.registros where tipo = 'config' limit 1),
     'servicos', coalesce((select jsonb_agg(jsonb_build_object('id', id, 'nome', dados->'nome',
-                 'preco', dados->'preco', 'dur', dados->'dur', 'com', dados->'com') order by dados->>'nome')
+                 'preco', dados->'preco', 'dur', dados->'dur', 'com', case when coalesce(v_ver, false) then dados->'com' end) order by dados->>'nome')
                from public.registros where tipo = 'servicos'), '[]'),
     'agenda', coalesce((select jsonb_agg(jsonb_build_object(
                  'id', a.id, 'data', a.dados->'data', 'hora', a.dados->'hora', 'dur', a.dados->'dur',

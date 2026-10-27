@@ -829,7 +829,7 @@ function telaAgenda() {
   const nSlots = Math.ceil((fim - ini) / passo);
   const ags = db.ags.filter(a => a.data === diaAgenda && a.status !== 'cancelado' && a.status !== 'recusado');
   const nomeDia = new Date(diaAgenda + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const chips = `<div class="chips">${todas.map(p => { const n = db.ags.filter(a => a.data === diaAgenda && a.prof === p.id && a.status !== 'cancelado' && a.status !== 'recusado').length;
+  const chips = `<div class="chips">${todas.map(p => { const n = db.ags.filter(a => a.data === diaAgenda && a.prof === p.id && a.status !== 'cancelado' && a.status !== 'recusado' && a.status !== 'bloqueado').length;
     return `<button data-chip="${p.id}" class="${p.id === profCel ? 'on' : ''}"><span class="bola" style="background:${p.cor};color:${p.cor}"></span>${esc(p.nome)}<small>${n}</small></button>`; }).join('')}</div>`;
   let g = `<div class="agenda" style="grid-template-columns:${ehCelular() ? '56px' : '62px'} repeat(${profs.length}, minmax(${ehCelular() ? '0' : '150px'},1fr));grid-template-rows:auto repeat(${nSlots}, ${passo >= 60 ? 66 : passo >= 30 ? 48 : 36}px)">`;
   g += `<div class="cab" style="grid-column:1;grid-row:1"></div>`;

@@ -539,7 +539,8 @@ function abrirAgendar() {
 /* Bloquear horário: um período ou o dia inteiro */
 function abrirBloquear() {
   const c = dados.salao || {}, ini = toMin(c.abre || '08:00'), fim = toMin(c.fecha || '20:00');
-  const marcas = []; for (let m = ini; m <= fim; m += 30) marcas.push(toHM(m));
+  const marcas = []; for (let m = ini; m < fim; m += 30) marcas.push(toHM(m));
+  marcas.push(toHM(fim)); // o fim é sempre o fechamento exato, mesmo fora da meia hora
   const st = { dia: dia >= hoje() ? dia : hoje(), de: marcas[0], ate: marcas[marcas.length - 1], inteiro: true };
   const f = folha(`<h2>Bloquear horário</h2><p class="sub">Folga, compromisso ou imprevisto. O site deixa de oferecer esse horário.</p>
     <div class="secao"><label class="rot">Dia</label><div class="dias" id="blDias"></div></div>
