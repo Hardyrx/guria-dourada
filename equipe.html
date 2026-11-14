@@ -57,6 +57,9 @@ h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:28px 4px 10px}
 .linha b{display:block;font-weight:600;font-size:16px}
 .linha .meta{font-size:14px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 12px}
 .linha .valor{font-weight:600;white-space:nowrap}
+.busca-serv{width:100%;border:0;border-radius:12px;padding:12px 14px;font-size:16px;background:var(--card);margin:4px 0 6px;-webkit-appearance:none}
+.busca-serv:focus{outline:none;box-shadow:inset 0 0 0 2px var(--gold)}
+.etq{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);background:#F6EFE0;border-radius:6px;padding:1px 7px}
 .vazio{text-align:center;color:var(--muted);padding:34px 16px;font-size:15px}
 
 /* Agenda */
@@ -199,6 +202,15 @@ const ST = { pendente: 'Aguardando você', agendado: 'Confirmado', fechado: 'Ate
 const primeiro = n => String(n || '').trim().split(/\s+/)[0] || '';
 const inicial = n => esc(String(n || '?').trim().charAt(0).toUpperCase());
 function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2800); }
+/* "Pacote" sai do nome e vira etiqueta, para o pacote ficar logo abaixo do avulso na ordem alfabética */
+function nomeServ(nome) {
+  const pacote = /pacote/i.test(String(nome || ''));
+  const n = limparNome(String(nome || '').replace(/\p{Extended_Pictographic}|️/gu, '').replace(/\s*-?\s*pacote\s*$/i, '').replace(/^\s*pacote\s*-?\s*/i, ''));
+  return { nome: n, pacote };
+}
+const semAcento = t => String(t || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+let buscaServ = '';
+
 function limparNome(nome) {
   const MIN = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'sem', 'para', 'a', 'o', 'em']);
   let s = String(nome || '').replace(/\p{Extended_Pictographic}|️/gu, '').replace(/\s*\/\s*/g, ' / ').replace(/\(\s*/g, '(').replace(/\s*\)/g, ')').replace(/\s*-\s*/g, ', ').replace(/\s+/g, ' ').trim();
@@ -493,13 +505,13 @@ function abrirAgendar() {
     }
   };
   const desenharServs = () => {
-    const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
-    const q = norm(st.buscaServ);
-    const lista = (dados.servicos || []).map(x => ({ ...x, nomeL: limparNome(x.nome) })).filter(x => !q || norm(x.nomeL).includes(q) || st.servs.some(y => y.id === x.id))
-      .sort((a, b) => a.nomeL.localeCompare(b.nomeL, 'pt-BR'));
+    const q = semAcento(st.buscaServ);
+    const lista = (dados.servicos || []).map(x => { const n = nomeServ(x.nome); return { ...x, nomeL: n.nome, pacote: n.pacote }; })
+      .filter(x => !q || semAcento(x.nomeL).includes(q) || (x.pacote && q.length >= 3 && 'pacote'.startsWith(q)) || st.servs.some(y => y.id === x.id))
+      .sort((a, b) => a.nomeL.localeCompare(b.nomeL, 'pt-BR') || a.pacote - b.pacote);
     const el = f.querySelector('#agServs');
     el.innerHTML = lista.map(x => { const on = st.servs.some(y => y.id === x.id);
-      return `<button class="res ${on ? 'on' : ''}" data-s="${esc(x.id)}"><b>${esc(x.nomeL)}</b><small>${+x.preco ? brl(x.preco) : 'Avaliação'} · ${+x.dur || 60} min</small><span class="ck">${on ? '✓' : '+'}</span></button>`; }).join('') || '<div class="vazio">Nenhum serviço com esse nome.</div>';
+      return `<button class="res ${on ? 'on' : ''}" data-s="${esc(x.id)}"><b>${esc(x.nomeL)}</b><small>${x.pacote ? 'Pacote · ' : ''}${+x.preco ? brl(x.preco) : 'Avaliação'} · ${+x.dur || 60} min</small><span class="ck">${on ? '✓' : '+'}</span></button>`; }).join('') || '<div class="vazio">Nenhum serviço com esse nome.</div>';
     el.querySelectorAll('.res').forEach(b => b.onclick = () => {
       const x = (dados.servicos || []).find(y => y.id === b.dataset.s), i = st.servs.findIndex(y => y.id === x.id);
       if (i >= 0) st.servs.splice(i, 1); else st.servs.push(x);
@@ -599,9 +611,19 @@ function telaPedidos() {
 }
 
 function telaServicos() {
-  const s = (dados.servicos || []).map(x => ({ ...x, nome: limparNome(x.nome) })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  $('#conteudo').innerHTML = `<h1>Serviços e preços</h1><p class="sub">Tabela atual do salão.</p>
-    <div class="lista">${s.map(x => `<div class="linha"><div class="txt"><b>${esc(x.nome)}</b><div class="meta">${+x.dur >= 60 ? (+x.dur / 60).toString().replace('.', ',') + ' h' : esc(x.dur) + ' min'}</div></div><span class="valor">${+x.preco ? brl(x.preco) : 'Avaliação'}</span></div>`).join('') || '<div class="vazio">Nenhum serviço cadastrado.</div>'}</div>`;
+  const todos = (dados.servicos || []).map(x => ({ ...x, ...nomeServ(x.nome) }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR') || a.pacote - b.pacote);
+  const item = x => `<div class="linha"><div class="txt"><b>${esc(x.nome)}</b><div class="meta">${x.pacote ? '<span class="etq">Pacote</span>' : ''}${+x.dur >= 60 ? (+x.dur / 60).toString().replace('.', ',') + ' h' : esc(x.dur) + ' min'}</div></div><span class="valor">${+x.preco ? brl(x.preco) : 'Avaliação'}</span></div>`;
+  const desenhar = () => {
+    const q = semAcento(buscaServ.trim()), l = todos.filter(x => !q || semAcento(x.nome).includes(q) || (x.pacote && q.length >= 3 && 'pacote'.startsWith(q)));
+    $('#listaServs').innerHTML = !l.length ? `<div class="lista"><div class="vazio">${todos.length ? 'Nenhum serviço com esse nome.' : 'Nenhum serviço cadastrado.'}</div></div>`
+      : `<div class="lista">${l.map(item).join('')}</div>`;
+  };
+  $('#conteudo').innerHTML = `<h1>Serviços e preços</h1><p class="sub">Tabela atual do salão. ${todos.length} serviços.</p>
+    <input class="busca-serv" id="buscaServ" type="search" placeholder="Buscar serviço" autocomplete="off" value="${esc(buscaServ)}">
+    <div id="listaServs"></div>`;
+  $('#buscaServ').oninput = e => { buscaServ = e.target.value; desenhar(); };
+  desenhar();
 }
 
 function telaGanhos() {
