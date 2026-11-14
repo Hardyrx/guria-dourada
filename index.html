@@ -243,9 +243,9 @@ function limparNome(nome) {
 }
 function categoria(nome) {
   const n = nome.toLowerCase();
-  if (/mega ?hair/.test(n)) return 'Mega Hair';
   if (/corte/.test(n)) return 'Cortes';
   if (/escova/.test(n)) return 'Escovas';
+  if (/\bmega\b/.test(n)) return 'Mega Hair';
   if (/progressiv|alisa|botox/.test(n)) return 'Progressiva e Botox';
   if (/colora|mecha|luzes|balayage|tint/.test(n)) return 'Coloração';
   if (/bronze|drenagem|massag|depila/.test(n)) return 'Corpo e Bronze';
