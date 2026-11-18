@@ -610,6 +610,22 @@ function ligarLembretes(raiz) {
 
 const prof = id => db.profs.find(p => p.id === id);
 const serv = id => db.servicos.find(s => s.id === id);
+
+/* Nome do serviço/produto como no site: sem emoji, sem caixa alta, "Pacote" vira etiqueta; listas em ordem alfabética */
+const MINUSC = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'sem', 'para', 'a', 'o', 'em']);
+function limparNome(nome) {
+  let s = String(nome || '').replace(/\p{Extended_Pictographic}|️/gu, '').replace(/\s*\/\s*/g, ' / ')
+    .replace(/\(\s*/g, '(').replace(/\s*\)/g, ')').replace(/\s*-\s*/g, ', ').replace(/\s+/g, ' ').trim();
+  const pacote = /pacote/i.test(s);
+  s = s.replace(/\s*,?\s*pacote\s*$/i, '').replace(/^\s*pacote\s*,?\s*/i, '');
+  s = s.toLowerCase().split(' ').map((w, i) => (i && MINUSC.has(w)) ? w : w.replace(/^(\(?)(\p{L})/u, (m, p, l) => p + l.toUpperCase())).join(' ');
+  return { nome: s.replace(/\s*,\s*$/, ''), pacote };
+}
+const nomeItem = x => { const l = limparNome(x.nome); return l.nome + (l.pacote ? ' · Pacote' : ''); };
+const porNome = (a, b) => { const x = limparNome(a.nome), y = limparNome(b.nome); return x.nome.localeCompare(y.nome, 'pt-BR') || x.pacote - y.pacote; };
+const servsAZ = () => [...db.servicos].sort(porNome);
+const prodsAZ = () => [...db.produtos].sort(porNome);
+const porCliente = (x, y) => String(x.nome || '').localeCompare(String(y.nome || ''), 'pt-BR', { sensitivity: 'base' });
 const prod = id => db.produtos.find(p => p.id === id);
 const cli = id => db.clientes.find(c => c.id === id);
 const profsAtivos = () => db.profs.filter(p => p.ativo).sort((a, b) => a.cadeira - b.cadeira);
@@ -873,11 +889,11 @@ function telaAgenda() {
 
 function formAgendamento(a) {
   const edit = !!a.id;
-  const clis = [...db.clientes].sort((x, y) => x.nome.localeCompare(y.nome));
+  const clis = [...db.clientes].sort(porCliente);
   formulario(edit ? 'Editar agendamento' : 'Novo agendamento', [
     { k: 'data', rot: 'Data', tipo: 'date' }, { k: 'hora', rot: 'Horário', tipo: 'time' },
     { k: 'prof', rot: 'Profissional', tipo: 'select', ops: profsAtivos().map(p => [p.id, `${p.nome} (cadeira ${p.cadeira})`]) },
-    { k: 'serv', rot: 'Serviço', tipo: 'select', ops: db.servicos.map(s => [s.id, `${s.nome} · ${s.dur} min`]) },
+    { k: 'serv', rot: 'Serviço', tipo: 'select', ops: servsAZ().map(s => [s.id, `${nomeItem(s)} · ${s.dur} min`]) },
     { k: 'cli', rot: 'Cliente', tipo: 'select', ops: [['', 'Selecione...'], ['__nova', '+ Cliente nova'], ...clis.map(c => [c.id, c.nome])] },
     { k: 'nova', rot: 'Nome da cliente nova', ph: 'Só se escolheu cliente nova', oculto: true },
     { k: 'tel', rot: 'Telefone da cliente nova', ph: '(51) 9...', oculto: true },
@@ -969,9 +985,9 @@ function comanda(ag) {
   let itens = [];
   if (ag) { const s = serv(ag.serv); itens.push({ key: 's:' + s.id, valor: s.preco, qtd: 1, p1: ag.prof, p2: '', pct1: 50 }); }
   else itens.push({ key: '', valor: 0, qtd: 1, p1: profsAtivos()[0]?.id, p2: '', pct1: 50 });
-  const clis = [...db.clientes].sort((x, y) => x.nome.localeCompare(y.nome));
-  const opsItem = `<option value="">Escolha...</option><optgroup label="Serviços">${db.servicos.map(s => `<option value="s:${s.id}">${esc(s.nome)} (${brl(s.preco)})</option>`).join('')}</optgroup>
-    <optgroup label="Produtos">${db.produtos.map(p => `<option value="p:${p.id}">${esc(p.nome)} (${brl(p.preco)})</option>`).join('')}</optgroup>`;
+  const clis = [...db.clientes].sort(porCliente);
+  const opsItem = `<option value="">Escolha...</option><optgroup label="Serviços">${servsAZ().map(s => `<option value="s:${s.id}">${esc(nomeItem(s))} (${brl(s.preco)})</option>`).join('')}</optgroup>
+    <optgroup label="Produtos">${prodsAZ().map(p => `<option value="p:${p.id}">${esc(nomeItem(p))} (${brl(p.preco)})</option>`).join('')}</optgroup>`;
   const opsProf = (sel, vazio) => (vazio ? `<option value="">Ninguém</option>` : '') + profsAtivos().map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(p.nome)}</option>`).join('');
 
   const f = modal(`<h2>${ag ? 'Fechar comanda' : 'Nova venda'}</h2>
@@ -1102,7 +1118,7 @@ function telaClientes() {
   ligarLembretes(main);
   const lista = () => {
     const q = buscaCli.toLowerCase();
-    const cs = db.clientes.filter(c => !q || c.nome.toLowerCase().includes(q) || (c.tel || '').includes(q)).sort((a, b) => a.nome.localeCompare(b.nome));
+    const cs = db.clientes.filter(c => !q || c.nome.toLowerCase().includes(q) || (c.tel || '').includes(q)).sort(porCliente);
     $('#listaCli').innerHTML = cs.length ? `<table><thead><tr><th>Nome</th><th>Telefone</th><th>Aniversário</th><th class="num">Visitas</th><th>Última visita</th><th class="num">Total gasto</th><th>Cupons ativos</th><th></th></tr></thead><tbody>
     ${cs.map(c => { const vs = visitas(c.id), ult = vs.map(v => v.data).sort().pop(), nr = niverRef(c.niver), ks = cuponsAtivos(c.id);
       return `<tr><td>${esc(c.nome)}${c.obs ? `<br><small style="color:var(--muted)">${esc(c.obs)}</small>` : ''}</td><td>${esc(c.tel)}</td>
@@ -1183,9 +1199,9 @@ function telaCadastros() {
     [...db.profs].filter(p => !p.excluida).sort((a, b) => a.cadeira - b.cadeira).map(p => [p.id, [p.cadeira, `${p.foto ? `<img src="${esc(p.foto)}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">` : `<span class="bola" style="background:${p.cor};color:${p.cor}"></span>`}${esc(p.nome)}`, p.comServ + '%', p.comProd + '%', p.ativo ? 'Ativa' : 'Inativa',
       `<button class="btn peq" data-acesso="${p.id}">${textoAcesso(p.id)}</button>`]]), 'Nova profissional');
   if (abaCad === 'servicos') corpo = tabela(['Serviço', 'Preço', 'Duração', 'Comissão'],
-    db.servicos.map(s => [s.id, [esc(s.nome), brl(s.preco), s.dur + ' min', s.com === '' || s.com == null ? 'Padrão da profissional' : s.com + '% para todas']]), 'Novo serviço');
+    servsAZ().map(s => [s.id, [esc(nomeItem(s)), brl(s.preco), s.dur + ' min', s.com === '' || s.com == null ? 'Padrão da profissional' : s.com + '% para todas']]), 'Novo serviço');
   if (abaCad === 'produtos') corpo = tabela(['Produto', 'Preço', 'Comissão'],
-    db.produtos.map(p => [p.id, [esc(p.nome), brl(p.preco), p.com === '' || p.com == null ? 'Padrão da profissional' : p.com + '% para todas']]), 'Novo produto');
+    prodsAZ().map(p => [p.id, [esc(nomeItem(p)), brl(p.preco), p.com === '' || p.com == null ? 'Padrão da profissional' : p.com + '% para todas']]), 'Novo produto');
   if (abaCad === 'salao') { const c = db.config; corpo = `<div class="painel"><p>Nome: <b>${esc(c.nome)}</b> (${esc(c.slogan)}) · Funcionamento: ${c.abre} às ${c.fecha} · Intervalo da agenda: ${c.intervalo} min</p>
     <p>Taxas: ${Object.entries(PAGS).map(([k, l]) => `${l} ${c.taxas[k]}%`).join(' · ')}</p>
     <p>Taxa do cartão ${c.descontaTaxa ? '<b>é descontada</b>' : '<b>não é descontada</b>'} antes de calcular a comissão.</p>

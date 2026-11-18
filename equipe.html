@@ -497,6 +497,7 @@ function abrirAgendar() {
           const { data, error } = await sb.rpc('buscar_clientes', { p_q: q });
           if (inp.value.trim() !== q) return;
           if (error) { res.innerHTML = `<div class="vazio">${esc(semFuncao(error))}</div>`; return; }
+          (data || []).sort((x, y) => String(x.nome || '').localeCompare(String(y.nome || ''), 'pt-BR', { sensitivity: 'base' }));
           res.innerHTML = (data || []).map((c, i) => `<button class="res" data-i="${i}"><b>${esc(c.nome)}</b><small>${esc(c.tel || 'sem WhatsApp')}</small></button>`).join('') || '<div class="vazio">Nenhuma cliente com esse nome. Toque em "+ Cliente nova".</div>';
           res.querySelectorAll('.res').forEach(b => b.onclick = () => { st.cli = data[+b.dataset.i]; desenharCli(); botao(); });
         }, 300);
