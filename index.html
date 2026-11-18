@@ -385,6 +385,16 @@ function quando() { const d = new Date(sel.data + 'T12:00'); return `${SEM_LONGO
 function totalTxt() { return precoTotal() ? brl(precoTotal()) + (temAvaliacao() ? ' + avaliação' : '') : 'Sob avaliação'; }
 function mascaraTel(v) { const d = v.replace(/\D/g, '').slice(0, 11); if (d.length <= 2) return d.length ? `(${d}` : ''; if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`; if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`; return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; }
 
+/* Data digitada no teclado (DD/MM/AAAA): as barras entram sozinhas; vira AAAA-MM-DD para salvar */
+function mascaraData(v) { const d = String(v || '').replace(/\D/g, '').slice(0, 8); return d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; }
+function dataDigitada(v) {
+  const m = String(v || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if (!m) return null;
+  const [, d, mes, a] = m, dt = new Date(+a, +mes - 1, +d);
+  if (dt.getFullYear() !== +a || dt.getMonth() !== +mes - 1 || dt.getDate() !== +d || +a < 1900 || dt > new Date()) return null;
+  return `${a}-${mes}-${d}`;
+}
+const isoParaBR = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s.split('-').reverse().join('/') : '';
+
 function telaDados() {
   app.innerHTML = cabecalho('Confira e finalize', 'Confirmamos pelo WhatsApp.') +
     `<div class="lista">${sel.servs.map(s => `<div class="linha"><span>${esc(s.nome)}</span><span>${s.preco ? brl(s.preco) : 'Avaliação'}</span></div>`).join('')}
@@ -395,14 +405,14 @@ function telaDados() {
     <div class="form">
       <div class="campo"><label for="fNome">Nome completo</label><input id="fNome" value="${esc(form.nome)}" autocomplete="name"></div>
       <div class="campo"><label for="fTel">WhatsApp</label><input id="fTel" value="${esc(form.tel)}" placeholder="(51) 99999-9999" type="tel" inputmode="numeric" autocomplete="tel-national"></div>
-      <div class="campo"><label for="fNiver">Aniversário, opcional. Tem presente no seu mês.</label><input id="fNiver" value="${esc(form.niver)}" type="date"></div>
+      <div class="campo"><label for="fNiver">Aniversário, opcional. Tem presente no seu mês.</label><input id="fNiver" value="${esc(form.niverTxt ?? isoParaBR(form.niver))}" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="bday" maxlength="10"></div>
     </div>
     <p class="nota">O horário fica reservado depois que confirmamos pelo WhatsApp.</p>
     <div class="erro" id="err"></div>`;
   const n = $('#fNome'), t = $('#fTel'), b = $('#fNiver');
   n.oninput = () => { form.nome = n.value; atualizarBarra(); };
   t.oninput = () => { t.value = mascaraTel(t.value); form.tel = t.value; atualizarBarra(); };
-  b.oninput = () => { form.niver = b.value; };
+  b.oninput = () => { b.value = mascaraData(b.value); form.niverTxt = b.value; form.niver = dataDigitada(b.value) || ''; };
 }
 
 /* ============ Barra inferior ============ */
@@ -440,6 +450,7 @@ $('#barraBtn').onclick = () => { if (!podeAvancar()) return; if (passo < 4) ir(p
 /* ============ Envio ============ */
 async function enviar() {
   const btn = $('#barraBtn'), err = $('#err');
+  if (form.niverTxt && !form.niver) { err.textContent = 'Confira o aniversário: digite dia, mês e ano, como 25/03/2003. Ou deixe em branco.'; $('#fNiver')?.focus(); return; }
   btn.disabled = true; btn.textContent = 'Enviando...'; err.textContent = '';
   const lb = $('#latBtn'); if (lb) { lb.disabled = true; lb.textContent = 'Enviando...'; }
   const { data: resp, error } = await sb.rpc('solicitar_agendamento', {

@@ -742,25 +742,41 @@ function modal(html, largo) {
 }
 
 /* Formulário genérico */
+/* Data digitada no teclado (DD/MM/AAAA): as barras entram sozinhas; vira AAAA-MM-DD para salvar */
+function mascaraData(v) { const d = String(v || '').replace(/\D/g, '').slice(0, 8); return d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; }
+function dataDigitada(v) {
+  const m = String(v || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if (!m) return null;
+  const [, d, mes, a] = m, dt = new Date(+a, +mes - 1, +d);
+  if (dt.getFullYear() !== +a || dt.getMonth() !== +mes - 1 || dt.getDate() !== +d || +a < 1900 || dt > new Date()) return null;
+  return `${a}-${mes}-${d}`;
+}
+const isoParaBR = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s.split('-').reverse().join('/') : '';
+
 function formulario(titulo, campos, valores, aoSalvar, extra) {
   const html = `<h2>${esc(titulo)}</h2><div class="campos">${campos.map(c => {
-    const v = valores[c.k] ?? '';
+    const v = c.tipo === 'databr' ? isoParaBR(valores[c.k]) : (valores[c.k] ?? '');
     const cls = c.cheio ? 'cheio' : '';
     if (c.tipo === 'check') return `<label class="check ${cls}"><input type="checkbox" name="${c.k}" ${v ? 'checked' : ''}> ${esc(c.rot)}</label>`;
-    if (c.oculto) return `<label class="${cls}" data-oculto="${c.k}" style="display:none">${esc(c.rot)}<input name="${c.k}" type="${c.tipo || 'text'}" value="${esc(v)}" ${c.ph ? `placeholder="${esc(c.ph)}"` : ''}></label>`;
+    if (c.oculto) return `<label class="${cls}" data-oculto="${c.k}" style="display:none">${esc(c.rot)}<input name="${c.k}" type="${c.tipo === 'databr' ? 'text' : c.tipo || 'text'}" value="${esc(v)}" ${c.tipo === 'databr' ? 'placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10"' : c.ph ? `placeholder="${esc(c.ph)}"` : ''}></label>`;
     if (c.tipo === 'select') return `<label class="${cls}">${esc(c.rot)}<select name="${c.k}">${c.ops.map(([ov, ol]) => `<option value="${esc(ov)}" ${String(ov) === String(v) ? 'selected' : ''}>${esc(ol)}</option>`).join('')}</select></label>`;
+    if (c.tipo === 'databr') return `<label class="${cls}">${esc(c.rot)}<input name="${c.k}" type="text" value="${esc(v)}" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10"></label>`;
     return `<label class="${cls}">${esc(c.rot)}<input name="${c.k}" type="${c.tipo || 'text'}" value="${esc(v)}" ${c.step ? `step="${c.step}"` : ''} ${c.ph ? `placeholder="${esc(c.ph)}"` : ''}></label>`;
   }).join('')}</div><div class="erro"></div>
   <div class="acoes">${extra ? extra.map((e, i) => `<button class="btn ${e.cls || ''} esq" data-x="${i}">${esc(e.rot)}</button>`).join('') : ''}
   <button class="btn" data-fechar>Cancelar</button><button class="btn pri" data-salvar>Salvar</button></div>`;
   const f = modal(html);
-  const ler = () => { const o = {}; campos.forEach(c => { const el = f.querySelector(`[name="${c.k}"]`); o[c.k] = c.tipo === 'check' ? el.checked : (c.tipo === 'number' ? (el.value === '' ? '' : +el.value) : el.value.trim()); }); return o; };
+  const ler = () => { const o = {}; campos.forEach(c => { const el = f.querySelector(`[name="${c.k}"]`); o[c.k] = c.tipo === 'check' ? el.checked : c.tipo === 'number' ? (el.value === '' ? '' : +el.value) : c.tipo === 'databr' ? (el.value.trim() ? dataDigitada(el.value) : '') : el.value.trim(); }); return o; };
+  f.querySelectorAll('input[placeholder="DD/MM/AAAA"]').forEach(el => el.addEventListener('input', () => { el.value = mascaraData(el.value); }));
   // Mostrar campos nova cliente só quando necessário
   const cliSel = f.querySelector('[name=cli]');
   const toggleNova = () => { const nova = cliSel?.value === '__nova'; f.querySelectorAll('[data-oculto]').forEach(el => el.style.display = nova ? '' : 'none'); };
   if (cliSel) { cliSel.addEventListener('change', toggleNova); toggleNova(); }
   f.querySelector('[data-fechar]').onclick = () => f.remove();
-  f.querySelector('[data-salvar]').onclick = () => { const r = aoSalvar(ler(), f); if (typeof r === 'string') f.querySelector('.erro').textContent = r; else f.remove(); };
+  f.querySelector('[data-salvar]').onclick = () => {
+    const v = ler(), ruim = campos.find(c => c.tipo === 'databr' && v[c.k] === null && f.querySelector(`[name="${c.k}"]`).closest('label').style.display !== 'none');
+    if (ruim) { f.querySelector('.erro').textContent = `Confira ${ruim.rot.toLowerCase()}: digite dia, mês e ano, como 25/03/2003.`; return; }
+    campos.forEach(c => { if (c.tipo === 'databr' && v[c.k] === null) v[c.k] = ''; });
+    const r = aoSalvar(v, f); if (typeof r === 'string') f.querySelector('.erro').textContent = r; else f.remove(); };
   if (extra) f.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { extra[+b.dataset.x].fn(f); });
   return f;
 }
@@ -897,7 +913,7 @@ function formAgendamento(a) {
     { k: 'cli', rot: 'Cliente', tipo: 'select', ops: [['', 'Selecione...'], ['__nova', '+ Cliente nova'], ...clis.map(c => [c.id, c.nome])] },
     { k: 'nova', rot: 'Nome da cliente nova', ph: 'Só se escolheu cliente nova', oculto: true },
     { k: 'tel', rot: 'Telefone da cliente nova', ph: '(51) 9...', oculto: true },
-    { k: 'niver', rot: 'Aniversário da cliente nova', tipo: 'date', oculto: true },
+    { k: 'niver', rot: 'Aniversário da cliente nova', tipo: 'databr', oculto: true },
     { k: 'obs', rot: 'Observação', cheio: true }
   ], a, v => {
     if (!v.data || !v.hora) return 'Informe data e horário.';
@@ -1139,7 +1155,7 @@ function telaClientes() {
 function editarCliente(id) {
   const c = id ? cli(id) : { nome: '', tel: '', niver: '', obs: '' };
   formulario(id ? 'Editar cliente' : 'Nova cliente', [
-    { k: 'nome', rot: 'Nome', cheio: true }, { k: 'tel', rot: 'WhatsApp', ph: '(51) 99999-9999' }, { k: 'niver', rot: 'Aniversário', tipo: 'date' },
+    { k: 'nome', rot: 'Nome', cheio: true }, { k: 'tel', rot: 'WhatsApp', ph: '(51) 99999-9999' }, { k: 'niver', rot: 'Aniversário', tipo: 'databr' },
     { k: 'obs', rot: 'Observações (alergias, preferências...)', cheio: true }
   ], c, v => {
     if (!v.nome) return 'Digite o nome.';
